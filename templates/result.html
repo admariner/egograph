@@ -18,12 +18,8 @@
 
 {# Load website data #}
 <script>
-	// Convert HTML to JSON
-	let txt = document.createElement('textarea');
-	txt.innerHTML = '{{graph_data}}';
-	let graph_data = JSON.parse(txt.value);
-
-	//console.log(graph_data)
+	let graph_data = JSON.parse({{graph_data|tojson}});
+	console.log(graph_data)
 </script>
 
 {# Chart data #}
