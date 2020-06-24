@@ -1,0 +1,31 @@
+/*----------------------------------------------------------*/
+/* BODY */
+
+.container-body {
+	max-width: 1024px;
+}
+
+#graph {
+	height: 780px;
+}
+
+/*----------------------------------------------------------*/
+/* Mobile */
+
+@media (max-width: 420px) {
+	#graph {
+		height: 580px;
+	}
+}
+
+@media (max-width: 380px) {
+	#graph {
+		height: 500px;
+	}
+}
+
+@media (max-width: 330px) {
+	#graph {
+		height: 410px;
+	}
+}

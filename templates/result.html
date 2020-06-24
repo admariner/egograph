@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{# Add page title #}
+{% set page_title = input_value + ' - Ego Graph' %}
+{% set page_desc = "Network graph of google search suggestions." %}
+
+{% block content %}
+
+{# Dashboard #}
+<div id="graph" class="w-100 border"></div>
+
+{% endblock %}
+
+{% block js %}
+
+{# Vis.js #}
+<script src="https://visjs.github.io/vis-network/standalone/umd/vis-network.min.js"></script>
+
+{# Load website data #}
+<script>
+	// Convert HTML to JSON
+	let txt = document.createElement('textarea');
+	txt.innerHTML = '{{graph_data}}';
+	let graph_data = JSON.parse(txt.value);
+
+	//console.log(graph_data)
+</script>
+
+{# Chart data #}
+<script src="{{ url_for('static', filename='graph.js') }}"></script>
+
+{% endblock %}

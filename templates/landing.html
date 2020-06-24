@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{# Add page title #}
+{% set page_title = "Ego Graph" %}
+{% set page_desc = "Network graph of google search suggestions." %}
+
+
+{% block content %}
+
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+
+    // Show alert
+    {% if alert %}
+    alert.show('{{alert}}');
+    {% endif %}
+    
+</script>
+{% endblock %}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	{# Title & Description #}
+	<title>{{ page_title }}</title>
+	<meta name="description" content="{{ page_desc }}">
+	
+	{# Stylesheets #}
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+	<link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+
+</head>
+
+<body>
+
+	<nav class="navbar navbar-expand navbar-dark bg-dark px-0 mb-3">
+		<div class="container-fluid container-body px-3">
+			<a class="navbar-brand" href="{{ url_for('landing') }}">ego graph</a>
+			<div class="collapse navbar-collapse" id="navbarCollapse">
+				{# Left nav links #}
+				<ul class="navbar-nav mr-auto"></ul>
+				{# Right nav links #}
+				<ul class="navbar-nav">
+					<li class="nav-item">
+						<a class="nav-link" href="https://github.com/ekerstein/egograph">GitHub</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<main role="main" class="container-fluid container-body px-3">
+
+		<div>
+			<div class="input-group mb-3">
+				<input type="text" id="query_input" class="form-control" placeholder="cats vs" value="{{ input_value }}">
+				<div class="input-group-append">
+					<button id="website_button" class="btn btn-outline-secondary" type="button">Search</button>
+				</div>
+			</div>
+			<div class="mb-4" id="alert_placeholder"></div>
+		</div>
+
+		{% block content %}
+		{% endblock %}
+
+	</main>
+
+	{# JS #}
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+	<script src="{{ url_for('static', filename='main.js') }}"></script>
+
+	{# Page-specific JS #}
+	{% block js %}
+	{% endblock %}
+
+</body>
+
+</html>
