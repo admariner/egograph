@@ -40,9 +40,9 @@
 
 		<div>
 			<div class="input-group mb-3">
-				<input type="text" id="query_input" class="form-control" placeholder="poodle" value="{{ input_value }}">
+				<input type="text" id="query_input" class="form-control" value="{{ input_value|default(['poodle','kale','pytorch','monterey','deep house']|random) }}">
 				<div class="input-group-append">
-					<button id="website_button" class="btn btn-outline-secondary" type="button">Versus</button>
+					<button id="website_button" class="btn btn-outline-primary" type="button">Versus</button>
 				</div>
 			</div>
 			<div class="mb-4" id="alert_placeholder"></div>

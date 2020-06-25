@@ -38,7 +38,7 @@ def internal_server_error(e):
 def result(query):
     try:
         # Operator
-        operator = ' vs'
+        operator = ' vs '
 
         # Form query      
         query1 = query.lower()
@@ -55,15 +55,24 @@ def result(query):
         nodes = {clean_query1: {'value': 1, 'color': '#6baed6'}} # {'a': 2} size of node
         edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
 
-        # Exclude words
-        exclude_words = ['or', 'vs', 'and']
+        # Exclude func
+        def not_excluded(suggestion_word_split):
+            # Exclude words
+            exclude_words = ['or', 'vs', 'and']
+            # Not blank
+            if suggestion_word_split:
+                # Not excluded words
+                if not any(x in suggestion_word_split for x in exclude_words):
+                    # Not 1 character
+                    if not (len(suggestion_word_split) == 1 and len(suggestion_word_split[0]) == 1):
+                        return True
 
         # Clean suggestions
         clean_suggestions1 = []
         for s in response_json[1]:
             clean_s = s[len(query1):].strip()
             clean_s_split = clean_s.split()
-            if not any(x in clean_s_split for x in exclude_words):
+            if not_excluded(clean_s_split):
                 clean_suggestions1.append(clean_s)
 
         # Add edges
@@ -101,7 +110,7 @@ def result(query):
             for s in response_json2[1]:
                 clean_s = s[len(query2):].strip()
                 clean_s_split = clean_s.split()
-                if not any(x in clean_s_split for x in exclude_words):
+                if not_excluded(clean_s_split):
                     clean_suggestions2.append(clean_s)
 
             # 2nd level suggestions
