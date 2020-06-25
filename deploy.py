@@ -33,47 +33,65 @@ def internal_server_error(e):
     alert = 'Error 500 - Internal server error. If you see this, please contact twitter.com/EdwardKerstein'
     return render_template('landing.html', alert=alert), 500
 
+################################################################################################################
+
+# Google search
+def google_search(query):
+    url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query)}'
+    return requests.request("GET", url).json()
+
+# Exclude func
+def not_excluded(suggestion_word_split):
+    # Exclude words
+    exclude_words = ['or', 'vs', 'and']
+    # Not blank
+    if suggestion_word_split:
+        # Not excluded words
+        if not any(x in suggestion_word_split for x in exclude_words):
+            # Not 1 character
+            if not (len(suggestion_word_split) == 1 and len(suggestion_word_split[0]) == 1):
+                return True
+
+# Clean suggestions func
+def clean_suggestions(suggestion_list, data_array, operator):
+    # For each suggestion
+    for s in suggestion_list:
+        # Split words
+        s_split = s.split()
+        # For each word
+        for word in s.split():
+            s_split.remove(word)
+            if word == operator.strip():
+                break
+        # Check exclusions
+        if not_excluded(s_split):
+            # Turn into string
+            data_array.append(' '.join(s_split))
+
 # Charts & Dashboards
 @app.route("/graph/<path:query>")
 def result(query):
     try:
-        # Operator
-        operator = ' vs '
+        # Clean
+        clean_query1 = query.lower().strip()
 
-        # Form query      
-        query1 = query.lower()
+        # Add versus if needed
+        operator = ' vs '  
+        query1 = clean_query1
         query1 += operator if query1[-len(operator):] != operator else ''
 
-        # Clean
-        clean_query1 = query1[:-len(operator)]
-
-        # Request
-        url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query1)}'
-        response_json = requests.request("GET", url).json()
-
-        # Containers
+        # Data containers
         nodes = {clean_query1: {'value': 1, 'color': '#6baed6'}} # {'a': 2} size of node
         edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
 
-        # Exclude func
-        def not_excluded(suggestion_word_split):
-            # Exclude words
-            exclude_words = ['or', 'vs', 'and']
-            # Not blank
-            if suggestion_word_split:
-                # Not excluded words
-                if not any(x in suggestion_word_split for x in exclude_words):
-                    # Not 1 character
-                    if not (len(suggestion_word_split) == 1 and len(suggestion_word_split[0]) == 1):
-                        return True
+        ########################################################
+
+        # First level search
+        response_json1 = google_search(query1)
 
         # Clean suggestions
         clean_suggestions1 = []
-        for s in response_json[1]:
-            clean_s = s[len(query1):].strip()
-            clean_s_split = clean_s.split()
-            if not_excluded(clean_s_split):
-                clean_suggestions1.append(clean_s)
+        clean_suggestions(response_json1[1], clean_suggestions1, operator)
 
         # Add edges
         for index, suggest1 in enumerate(clean_suggestions1):
@@ -86,12 +104,14 @@ def result(query):
             else:
                 nodes[suggest1]['value'] += 1
             # Add edge
-            weight = response_json[4]['google:suggestrelevance'][index]
+            weight = response_json1[4]['google:suggestrelevance'][index]
             edges.append({
                 'from': clean_query1,
                 'to': suggest1,
                 'value': weight,
             })
+
+        ########################################################
 
         # Second level search
         for query2 in clean_suggestions1:
@@ -99,19 +119,16 @@ def result(query):
             # Rate limit
             sleep(.05)
 
-            # Lookup
+            # Add operator if needed
             clean_query2 = query2
             query2 += operator if query2[-len(operator):] != operator else ''
-            url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query2)}'
-            response_json2 = requests.request("GET", url).json()
+
+            # Google search
+            response_json2 = google_search(query2)
 
             # Clean suggestions
             clean_suggestions2 = []
-            for s in response_json2[1]:
-                clean_s = s[len(query2):].strip()
-                clean_s_split = clean_s.split()
-                if not_excluded(clean_s_split):
-                    clean_suggestions2.append(clean_s)
+            clean_suggestions(response_json2[1], clean_suggestions2, operator)
 
             # 2nd level suggestions
             for index, suggest2 in enumerate(clean_suggestions2):
@@ -130,6 +147,8 @@ def result(query):
                     'to': suggest2,
                     'value': weight,
                 })
+
+        ########################################################
 
         # Form graph data
         graph_data = {
@@ -181,16 +200,16 @@ def result(query):
                 'value': edge['value'],
             })
 
+        ########################################################
+
         # Render
-        return render_template('result.html',input_value=query, graph_data=json.dumps(graph_data))
+        return render_template('result.html', input_value=clean_query1, graph_data=json.dumps(graph_data))
 
     # If exception raised
     except:
         try:
-            # 404 to landing page with alert
-            return render_template('landing.html', alert=alert, input_value=query), 404
+            return render_template('landing.html', alert=alert, input_value=clean_query1), 404
         except:
-            # If exception not captured, abort to 500
             abort(500)
 
 #################################################################
