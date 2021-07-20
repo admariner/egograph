@@ -1,39 +1,12 @@
-from flask import Flask # main app
-from flask import render_template # route to a template
-from flask import abort # abort to an error page
-#
+from django.shortcuts import render
+
 import requests # for getting URL
 import urllib # parsing url
 import json # for parsing json
-from time import sleep
+from time import sleep # rate limiting
 
-#################################################################
-# Initialize
-
-app = Flask(__name__)
-app.debug = False
-
-#################################################################
-# URL ROUTES
-
-# landing
-@app.route('/')
-def landing():
-    return render_template('landing.html')
-
-# Error - 404
-@app.errorhandler(404)
-def page_not_found_error(e):
-    alert = 'Error 404 - Page not found. If you see this, please contact twitter.com/EdwardKerstein'
-    return render_template('landing.html', alert=alert), 404
-
-# Error - 500
-@app.errorhandler(500)
-def internal_server_error(e):
-    alert = 'Error 500 - Internal server error. If you see this, please contact twitter.com/EdwardKerstein'
-    return render_template('landing.html', alert=alert), 500
-
-################################################################################################################
+#####################################################################################
+# Functions
 
 # Google search
 def google_search(query):
@@ -68,9 +41,17 @@ def clean_suggestions(suggestion_list, data_array, operator):
             # Turn into string
             data_array.append(' '.join(s_split))
 
-# Charts & Dashboards
-@app.route("/graph/<path:query>")
-def result(query):
+#####################################################################################
+# Landing
+
+def landing(request):
+    return render(request, 'search/landing.html')
+
+#####################################################################################
+# Search Results
+
+def result(request, query):
+
     try:
         # Clean
         clean_query1 = query.lower().strip()
@@ -203,17 +184,15 @@ def result(query):
         ########################################################
 
         # Render
-        return render_template('result.html', input_value=clean_query1, graph_data=json.dumps(graph_data))
+        return render(request, 'search/result.html', context = {
+            'input_value': clean_query1,
+            'graph_data': json.dumps(graph_data),
+        })
 
-    # If exception raised
+    # Error
     except:
-        try:
-            return render_template('landing.html', alert=alert, input_value=clean_query1), 404
-        except:
-            abort(500)
-
-#################################################################
-# RUN FLASK
-
-if __name__ == "__main__":
-    app.run()
+        # Return 500
+        return render(request, 'search/landing.html', context = {
+            'alert': 'Internal server error. If you see this, please contact twitter.com/EdwardKerstein',
+            'input_value': clean_query1,
+        }, status=500)

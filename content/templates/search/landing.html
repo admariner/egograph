@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block js %}
+    <script>
+
+        // Show alert
+        {% if alert %}
+        alert.show('{{alert}}');
+        {% endif %}
+        
+    </script>
+{% endblock %}

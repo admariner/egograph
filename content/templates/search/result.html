@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_title %}{{input_value}} - EgoGraph{% endblock %}
+
+{% block content %}
+
+	{# Dashboard #}
+	<div id="graph" class="w-100 border"></div>
+
+{% endblock %}
+
+{% block js %}
+
+	{# Pass context data to javascript #}
+	{{ graph_data|json_script:"graph_data" }}
+
+	{# Vis.js #}
+	<script src="https://visjs.github.io/vis-network/standalone/umd/vis-network.min.js"></script>
+
+	{# Chart data #}
+	<script src="{% static 'js/graph.js' %}"></script>
+
+{% endblock %}

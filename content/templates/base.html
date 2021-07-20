@@ -1,3 +1,5 @@
+{% load static %}
+
 <!doctype html>
 <html lang="en">
 
@@ -6,24 +8,38 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-	{# Title & Description #}
-	<title>{{ page_title }}</title>
-	<meta name="description" content="{{ page_desc }}">
+	{# Titles #}
+	<title>{% block page_title %}EgoGraph - Google Network Graph{% endblock %}</title>
+	<meta name="twitter:title" content="EgoGraph - Google Network Graph">
+	<meta property="og:title" content="EgoGraph - Google Network Graph">
 
-	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon"/>
-	
+	{# Description #}
+	<meta name="description" content="{% block page_desc %}Network graph of Google search suggestions.{% endblock %}">
+	<meta name="twitter:description" content="Network graph of Google search suggestions.">
+	<meta property="og:description" content="Network graph of Google search suggestions.">
+
+	{# Favicons #}	
+	<link rel="icon" href="{% static 'img/favicon.ico' %}">	
+
 	{# Stylesheets #}
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-	<link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+	<link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-	{# Google Analytics #}
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-KW9HC8BQ8B"></script>
-	<script>
-		window.dataLayer = window.dataLayer || [];
-		function gtag(){dataLayer.push(arguments);}
-		gtag('js', new Date());
-		gtag('config', 'G-KW9HC8BQ8B');
-	</script>
+	{# PROD ONLY #}
+	{% if not debug %}
+
+		{# Google Analytics #}
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-KW9HC8BQ8B"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-KW9HC8BQ8B');
+		</script>
+
+		{# Verify - Bing webmaster #}
+
+	{% endif %}
 
 </head>
 
@@ -31,7 +47,7 @@
 
 	<nav class="navbar navbar-expand navbar-dark bg-dark px-0 mb-3">
 		<div class="container-fluid container-body px-3">
-			<a class="navbar-brand" href="{{ url_for('landing') }}">Ego Graph</a>
+			<a class="navbar-brand" href="{% url 'search:landing' %}">EgoGraph</a>
 			<div class="collapse navbar-collapse" id="navbarCollapse">
 				{# Left nav links #}
 				<ul class="navbar-nav mr-auto"></ul>
@@ -64,7 +80,7 @@
 
 	{# JS #}
 	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-	<script src="{{ url_for('static', filename='main.js') }}"></script>
+	<script src="{% static 'js/main.js' %}"></script>
 
 	{# Page-specific JS #}
 	{% block js %}

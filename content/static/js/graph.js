@@ -1,5 +1,9 @@
-var network = null;
+// Get data
+const graph_data = JSON.parse(JSON.parse(document.getElementById('graph_data').textContent));
+console.log(graph_data)
 
+// Draw function
+var network = null;
 function draw() {
 
 	// Instantiate our network object.
@@ -21,6 +25,7 @@ function draw() {
 	network = new vis.Network(container, data, options);
 }
 
+// Draw graph on load event
 window.addEventListener("load", () => {
 	draw();
 });

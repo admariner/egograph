@@ -1,3 +1,5 @@
-.vscode
-archive
-env
+# detritus
+__pycache__
+
+# dev files
+staticfiles

@@ -1,1 +1,2 @@
-web: gunicorn deploy:app
+# Run project
+web: gunicorn config.wsgi
