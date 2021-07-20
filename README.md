@@ -1,7 +1,7 @@
 # egograph
 
 ## About
-* Network graph from google autocomplete suggestions. 
+Network graph of Google search suggestions.
 
 ## Development
 The website uses Django (a python framework) and is hosted on Heroku. It can be run locally for development.
