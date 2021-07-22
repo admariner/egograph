@@ -1,5 +1,18 @@
 {% extends "base.html" %}
 
+
+{% block content %}
+
+	{# Stats #}
+    <div class="h5">Network Stats</div>
+	<ul>
+        <li>Nodes - {{stats.nodes}}</li>
+        <li>Edges - {{stats.edges}}</li>
+    </ul>
+
+{% endblock %}
+
+
 {% block js %}
     <script>
 

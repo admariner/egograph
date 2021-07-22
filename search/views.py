@@ -12,7 +12,12 @@ from time import sleep # rate limiting
 # Page - Landing
 
 def landing(request):
-    return render(request, 'search/landing.html')
+    return render(request, 'search/landing.html', context = {
+        'stats': {
+            'nodes': Node.objects.count(),
+            'edges': Edge.objects.count(),
+        }
+    })
 
 #####################################################################################
 # Page - Search Results
