@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.db import connection
-from .models import Query, Parent_Child
+from .models import Node, Edge
 
 import requests # for getting URL
 import urllib # parsing url
@@ -25,8 +25,8 @@ def result(request, query):
     n_bulk = 100 # bulk update size (100 max)
 
     # Placeholders
-    bulk_parent_child_create = []
-    bulk_parent_child_delete_ids = []
+    bulk_edge_create = []
+    bulk_edge_delete_ids = []
 
     # Data containers
     clean_query = query.lower().strip()
@@ -112,43 +112,43 @@ def result(request, query):
     def database_update(search_results):
 
         # Parent - get or create
-        parent_obj, parent_created = Query.objects.get_or_create(name=search_results['query'])
+        parent_obj, parent_created = Node.objects.get_or_create(name=search_results['query'])
 
         # Children - bulk create setup
         child_obj_relevance = []
         child_obj_ids = []
         for i, child in enumerate(search_results['suggestions']):
-            child_obj, child_created = Query.objects.get_or_create(name=child)
+            child_obj, child_created = Node.objects.get_or_create(name=child)
             child_obj_relevance.append([child_obj, search_results['relevance'][i]]) # [obj, 500]
             child_obj_ids.append(child_obj.id)
             
         # If parent is new, match to all children
         if parent_created:
             for child_obj, relevance in child_obj_relevance: 
-                bulk_parent_child_create.append(Parent_Child(
+                bulk_edge_create.append(Edge(
                     parent=parent_obj,
                     child=child_obj,
-                    relevance=relevance,
+                    weight=relevance,
                 ))
 
         # Else, parent not new - need to check if any children need to be added or deleted
         else:
             # Get db list of parent's children
-            db_parent_child_ids = Parent_Child.objects.filter(parent=parent_obj).values_list('child', flat=True)
+            db_edge_ids = Edge.objects.filter(parent=parent_obj).values_list('child', flat=True)
             # Check create - If current child not in children, create
             for child_obj, relevance in child_obj_relevance: 
-                if child_obj.id not in db_parent_child_ids:
-                    bulk_parent_child_create.append(Parent_Child(
+                if child_obj.id not in db_edge_ids:
+                    bulk_edge_create.append(Edge(
                         parent=parent_obj,
                         child=child_obj,
-                        relevance=relevance,
+                        weight=relevance,
                     ))
             # Check delete - if old child not in current children, delete
-            for child_id in db_parent_child_ids:
+            for child_id in db_edge_ids:
                 if child_id not in child_obj_ids:
-                    qs = Parent_Child.objects.filter(parent=parent_obj, child_id=child_id)
+                    qs = Edge.objects.filter(parent=parent_obj, child_id=child_id)
                     if qs.exists():
-                        bulk_parent_child_delete_ids.append(qs.first().id)
+                        bulk_edge_delete_ids.append(qs.first().id)
 
     #################################################
     # 1st level search
@@ -204,21 +204,21 @@ def result(request, query):
             })
 
     #################################################
-    # Parent/Child lookup - bulk actions
+    # Edge - bulk actions
 
     # Bulk create
-    if bulk_parent_child_create:
-        settings.DEBUG and print(f"* Parent/Child - bulk create {len(bulk_parent_child_create)}.")
-        Parent_Child.objects.bulk_create(bulk_parent_child_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
+    if bulk_edge_create:
+        settings.DEBUG and print(f"* Edge - bulk create {len(bulk_edge_create)}.")
+        Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
 
     # Bulk delete
-    if bulk_parent_child_delete_ids:
-        settings.DEBUG and print(f"* Parent/Child - bulk delete {len(bulk_parent_child_delete_ids)}.")
+    if bulk_edge_delete_ids:
+        settings.DEBUG and print(f"* Edge - bulk delete {len(bulk_edge_delete_ids)}.")
         # Chunk deletions
         i_start = 0
         i_end = n_bulk
-        while i_start < len(bulk_parent_child_delete_ids):
-            Parent_Child.objects.filter(id__in=bulk_parent_child_delete_ids[i_start:i_end]).delete()
+        while i_start < len(bulk_edge_delete_ids):
+            Edge.objects.filter(id__in=bulk_edge_delete_ids[i_start:i_end]).delete()
             i_start = i_end
             i_end += n_bulk
 
