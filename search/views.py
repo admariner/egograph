@@ -7,6 +7,7 @@ import requests # for getting URL
 import urllib # parsing url
 import json # for parsing json
 from time import sleep # rate limiting
+import networkx as nx
 
 #####################################################################################
 # Page - Landing
@@ -29,15 +30,18 @@ def result(request, query):
     rate_limit = .05 # time between each query (seconds)
     n_bulk = 100 # bulk update size (100 max)
 
+    # Variables
+    clean_query = query.lower().strip()
+
     # Placeholders
     nodes_created = [0]
     bulk_edge_create = []
     bulk_edge_delete_ids = []
 
     # Data containers
-    clean_query = query.lower().strip()
-    nodes = {clean_query: {'value': 1, 'color': '#6baed6'}} # {'a': 2} size of node
-    edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
+    suggestion_history = {'all': []} # {all: ['a', 'b', 'c'], 1: ['a'], 2: ['b', 'c']} # sorted by relevance
+    graph_nodes = {clean_query: {'value': 1, 'color': '#fdae6b'}} # {'a': 2} size of node
+    graph_edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
 
     #################################################
     # Functions
@@ -155,70 +159,95 @@ def result(request, query):
         else:
             settings.DEBUG and print(f"* No search results - {search_results['query']}")
             
-    #################################################
-    # 1st level search
-    
-    # Search and update database
-    search1 = google_search(query)
-    database_update(search1)
-
     # Update graph data
-    for i, suggestion in enumerate(search1['suggestions']):
-        # Add node
-        if suggestion not in nodes:
-            nodes[suggestion] = {
-                'value': 1,
-                'color': '#87d0af',
-            }
-        else:
-            nodes[suggestion]['value'] += 1
-        # Add edge
-        weight = search1['relevance'][i]
-        edges.append({
-            'from': search1['query'],
-            'to': suggestion,
-            'value': weight,
-        })
-
-    #################################################
-    # 2nd level search
-
-    # For each child of parent
-    for child_query in search1['suggestions']:
-
-        # Search and update database
-        search2 = google_search(child_query)
-        database_update(search2)
-
-        # Update graph data
-        for i, suggestion in enumerate(search2['suggestions']):
+    def update_graph(search_results, color):
+        # For each suggestion
+        for i, suggestion in enumerate(search_results['suggestions']):
             # Add node
-            if suggestion not in nodes:
-                nodes[suggestion] = {
+            if suggestion not in graph_nodes:
+                graph_nodes[suggestion] = {
                     'value': 1,
-                    'color': '#fdae6b',
+                    'color': color,
                 }
             else:
-                nodes[suggestion]['value'] += 1
+                graph_nodes[suggestion]['value'] += 1
             # Add edge
-            weight = search2['relevance'][i]
-            edges.append({
-                'from': search2['query'],
+            weight = search_results['relevance'][i]
+            graph_edges.append({
+                'from': search_results['query'],
                 'to': suggestion,
                 'value': weight,
             })
+
+    # Add suggestions to history (already sorted by relevance)
+    def update_suggestion_history(search_results, level):
+        # Add specific level
+        if level in suggestion_history and isinstance(suggestion_history[level], list): 
+            suggestion_history[level].extend(search_results['suggestions'])
+        else:
+            suggestion_history[level] = search_results['suggestions']
+        # Add to all
+        suggestion_history['all'].extend(search_results['suggestions'])
+
+    #################################################
+    # Google search, update database, update graph data
+
+    # 1st level search
+    search1 = google_search(query)
+    database_update(search1)
+    update_graph(search1, '#f3e24d')
+
+    # Add to suggestion history
+    update_suggestion_history(search1, 1)
+
+    # For each child of 1st level (if it exists)
+    if 1 in suggestion_history:
+        for child1_query in suggestion_history[1]:
+
+            # 2nd level search
+            search2 = google_search(child1_query)
+            database_update(search2)
+            update_graph(search2, '#36c576') 
+
+            # Add to suggestion history
+            update_suggestion_history(search2, 2)
+
+    # If there's not enough nodes
+    if len(graph_nodes) <= 20:
+
+        # For each child of 2nd level (if it exists)
+        if 2 in suggestion_history:
+            for child2_query in suggestion_history[2]:
+
+                # 3rd level search
+                search3 = google_search(child2_query)
+                database_update(search3)
+                update_graph(search3, '#2acdc0')
+
+                # Add to suggestion history
+                update_suggestion_history(search3, 3)
+
+    # COLORS
+    #c5493c
+    #fdae6b
+    #f3e24d
+    #36c576
+    #2acdc0
+    #99c6c8
+    #
+    #6baed6
+    #87d0af
+    #0ca798
 
     #################################################
     # Edge - bulk actions
 
     # Bulk create
     if bulk_edge_create:
-        settings.DEBUG and print(f"* Edges - {len(bulk_edge_create)} created")
         Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
 
     # Bulk delete
     if bulk_edge_delete_ids:
-        settings.DEBUG and print(f"* Edges - {len(bulk_edge_delete_ids)} deleted")
         # Chunk deletions
         i_start = 0
         i_end = n_bulk
@@ -226,12 +255,6 @@ def result(request, query):
             Edge.objects.filter(id__in=bulk_edge_delete_ids[i_start:i_end]).delete()
             i_start = i_end
             i_end += n_bulk
-
-    # Debug
-    if settings.DEBUG:
-        nodes_created[0] and print(f"* Nodes - {nodes_created[0]} created")
-        if connection.queries:
-            print(f"* Made {len(connection.queries)} queries to the database")
 
     ########################################################
     # Form graph data
@@ -246,22 +269,22 @@ def result(request, query):
     edge_combos = {}
 
     # Add nodes
-    node_list = list(nodes.keys())
+    node_list = list(graph_nodes.keys())
     for i, node in enumerate(node_list):
         graph_data['nodes'].append({
             'id': i,
-            'value': nodes[node]['value'],
+            'value': graph_nodes[node]['value'],
             'label': node,
-            'color': nodes[node]['color'],
+            'color': graph_nodes[node]['color'],
         })
 
     # Add edges
-    for edge in edges:
+    for edge in graph_edges:
         # Get indices
         from_index = node_list.index(edge['from'])
         to_index = node_list.index(edge['to'])
 
-        # Check if combo already exists (only show one line)
+        # From/To - Check if combo already exists (only show one line)
         if from_index in edge_combos:
             if to_index in edge_combos[from_index]:
                 continue # skip loop
@@ -270,7 +293,7 @@ def result(request, query):
         else:
             edge_combos[from_index] = [to_index]
 
-        # Check if combo already exists (only show one line)
+        # To/From - Check if combo already exists (only show one line)
         if to_index in edge_combos:
             if from_index in edge_combos[to_index]:
                 continue # skip loop
@@ -285,6 +308,79 @@ def result(request, query):
             'to': to_index,
             'value': edge['value'],
         })
+
+    ########################################################
+    # Networkx
+
+    # Create edge list
+    edgelist = [(node_list[e['from']], node_list[e['to']], e['value']) for e in graph_data['edges']] # [('a', 'b', 5.0), ('c', 'd', 7.3)]
+
+    # Make graph
+    G = nx.MultiDiGraph(edgelist)
+    G2 = nx.Graph(G)
+
+    # Communicability
+    try:
+        communicability = [(n, v) for n,v in nx.communicability(G2)[clean_query].items()]
+        communicability.sort(key=lambda x:x[1])
+        communicability.reverse()
+    except:
+        communicability = []
+
+    # Communicability exp
+    try:
+        communicability_exp = [(n, v) for n,v in nx.communicability_exp(G2)[clean_query].items()]
+        communicability_exp.sort(key=lambda x:x[1])
+        communicability_exp.reverse()
+    except:
+        communicability_exp = []
+
+    # Centrality
+    centrality = [(n, v) for n,v in nx.degree_centrality(G).items()]
+    centrality.sort(key=lambda x:x[1])
+    centrality.reverse()
+
+    ########################################################
+    # Debug
+
+    if settings.DEBUG:
+        # Edge list
+        print("-" * 100)
+        print(edgelist)
+        print("-" * 100)
+        # Suggestion history
+        print(f"* {len(suggestion_history) - 1} levels of search")
+        for level, suggestions in suggestion_history.items():
+            if level != 'all':
+                print(f"> {level} - {suggestions}")
+        # Database
+        print("-" * 100)
+        print(f"* Nodes - {nodes_created[0]} created")
+        print(f"* Edges - {len(bulk_edge_create)} created, {len(bulk_edge_delete_ids)} deleted")
+        print(f"* Database -  {len(connection.queries) if connection.queries else 0} queries")  
+        # Networkx
+        print("-" * 100)
+        print(nx.info(G))
+        # Rankings
+        print("-" * 100)
+        print("RANKINGS")
+        google_ranking = []
+        [google_ranking.append(x) for x in suggestion_history['all'] if x not in google_ranking and x != clean_query]
+        print(f"* Google: {google_ranking[:10]}")
+        print(f"* communicability: {[x[0] for x in communicability if x[0] != clean_query][:10]}")
+        print(f"* communicability_exp: {[x[0] for x in communicability_exp if x[0] != clean_query][:10]}")
+        print(f"* centrality: {[x[0] for x in centrality if x[0] != clean_query][:10]}")
+        print(f"* voterank: {[x for x in nx.voterank(G) if x != clean_query][:10]}")
+        # NOTES
+            # Node-centered metrics are preferable because they take into account a starting point.
+                # Google
+                # Communicability
+            # Graph-wide metrics can be really bad because they don't start at a specific node. 
+            # So in a graph with many levels they can rank something far away from the initial query.
+                # Centrality
+                # Voterank 
+        # Fin
+        print("-" * 100)
 
     ########################################################
 
