@@ -98,7 +98,6 @@ def result(request, query):
         query_operator = f"{query} {operator}"
         # Google search
         response_json = google_search(query_operator)
-        #settings.DEBUG and print(f"\n{response_json}")
         # Clean suggestions
         suggestion_list = response_json[1]
         relevance_list = response_json[4]['google:suggestrelevance'] if 'google:suggestrelevance' in response_json[4] else []
@@ -110,51 +109,52 @@ def result(request, query):
             'suggestions': cleaned_suggestions['suggestions'],
             'relevance': cleaned_suggestions['relevance'],
         }
-        #settings.DEBUG and print(f"\n{data}")
+        # Debug
+        #settings.DEBUG and print(f"\n{response_json}\n\n{data}")
         return data
 
     # Make database updates
     def database_update(search_results):
-
-        # Parent - get or create
-        parent_obj, parent_created = Node.objects.get_or_create(name=search_results['query'])
-
-        # Children - bulk create setup
-        child_obj_relevance = []
-        child_obj_ids = []
-        for i, child in enumerate(search_results['suggestions']):
-            child_obj, child_created = Node.objects.get_or_create(name=child)
-            child_obj_relevance.append([child_obj, search_results['relevance'][i]]) # [obj, 500]
-            child_obj_ids.append(child_obj.id)
-            
-        # If parent is new, match to all children
-        if parent_created:
-            for child_obj, relevance in child_obj_relevance: 
-                bulk_edge_create.append(Edge(
-                    parent=parent_obj,
-                    child=child_obj,
-                    weight=relevance,
-                ))
-
-        # Else, parent not new - need to check if any children need to be added or deleted
-        else:
-            # Get db list of parent's children
-            db_edge_ids = Edge.objects.filter(parent=parent_obj).values_list('child', flat=True)
-            # Check create - If current child not in children, create
-            for child_obj, relevance in child_obj_relevance: 
-                if child_obj.id not in db_edge_ids:
+        # If there are any search results
+        if search_results['suggestions']:
+            # Parent - get or create
+            parent_obj, parent_created = Node.objects.get_or_create(name=search_results['query'])
+            # Children - bulk create setup
+            child_obj_relevance = []
+            child_obj_ids = []
+            for i, child in enumerate(search_results['suggestions']):
+                child_obj, child_created = Node.objects.get_or_create(name=child)
+                child_obj_relevance.append([child_obj, search_results['relevance'][i]]) # [obj, 500]
+                child_obj_ids.append(child_obj.id)
+            # Children - If parent is new, create edges for all children
+            if parent_created:
+                for child_obj, relevance in child_obj_relevance: 
                     bulk_edge_create.append(Edge(
                         parent=parent_obj,
                         child=child_obj,
                         weight=relevance,
                     ))
-            # Check delete - if old child not in current children, delete
-            for child_id in db_edge_ids:
-                if child_id not in child_obj_ids:
-                    qs = Edge.objects.filter(parent=parent_obj, child_id=child_id)
-                    if qs.exists():
-                        bulk_edge_delete_ids.append(qs.first().id)
-
+            # Children - Else, parent not new - edges may be added or deleted
+            else:
+                # Get db list of parent's children
+                db_edge_ids = Edge.objects.filter(parent=parent_obj).values_list('child', flat=True)
+                # Check create - If current child not in children, create
+                for child_obj, relevance in child_obj_relevance: 
+                    if child_obj.id not in db_edge_ids:
+                        bulk_edge_create.append(Edge(
+                            parent=parent_obj,
+                            child=child_obj,
+                            weight=relevance,
+                        ))
+                # Check delete - if old child not in current children, delete
+                for child_id in db_edge_ids:
+                    if child_id not in child_obj_ids:
+                        qs = Edge.objects.filter(parent=parent_obj, child_id=child_id)
+                        if qs.exists():
+                            bulk_edge_delete_ids.append(qs.first().id)
+        # Else, no results / stub
+        else:
+            settings.DEBUG and print(f"* {search_results['query']} - No search results, no db actions.")
     #################################################
     # 1st level search
     
