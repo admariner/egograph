@@ -30,6 +30,7 @@ def result(request, query):
     n_bulk = 100 # bulk update size (100 max)
 
     # Placeholders
+    nodes_created = [0]
     bulk_edge_create = []
     bulk_edge_delete_ids = []
 
@@ -40,11 +41,6 @@ def result(request, query):
 
     #################################################
     # Functions
-
-    # Google search
-    def google_search(query):
-        url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query)}'
-        return requests.request("GET", url).json()
 
     # Check words to see if they're allowed
     def not_excluded(suggestion_word_split):
@@ -87,7 +83,7 @@ def result(request, query):
         return results
 
     # Return google data
-    def get_google_data(query):
+    def google_search(query):
         # Rate limit
         sleep(rate_limit)
         # Clean - lowercase and no whitespace
@@ -97,7 +93,8 @@ def result(request, query):
         # Add operator back
         query_operator = f"{query} {operator}"
         # Google search
-        response_json = google_search(query_operator)
+        url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query_operator)}'
+        response_json = requests.request("GET", url).json()
         # Clean suggestions
         suggestion_list = response_json[1]
         relevance_list = response_json[4]['google:suggestrelevance'] if 'google:suggestrelevance' in response_json[4] else []
@@ -119,11 +116,13 @@ def result(request, query):
         if search_results['suggestions']:
             # Parent - get or create
             parent_obj, parent_created = Node.objects.get_or_create(name=search_results['query'])
+            nodes_created[0] += 1 if parent_created else 0
             # Children - bulk create setup
             child_obj_relevance = []
             child_obj_ids = []
             for i, child in enumerate(search_results['suggestions']):
                 child_obj, child_created = Node.objects.get_or_create(name=child)
+                nodes_created[0] += 1 if child_created else 0
                 child_obj_relevance.append([child_obj, search_results['relevance'][i]]) # [obj, 500]
                 child_obj_ids.append(child_obj.id)
             # Children - If parent is new, create edges for all children
@@ -154,12 +153,13 @@ def result(request, query):
                             bulk_edge_delete_ids.append(qs.first().id)
         # Else, no results / stub
         else:
-            settings.DEBUG and print(f"* {search_results['query']} - No search results, no db actions.")
+            settings.DEBUG and print(f"* No search results - {search_results['query']}")
+            
     #################################################
     # 1st level search
     
     # Search and update database
-    search1 = get_google_data(query)
+    search1 = google_search(query)
     database_update(search1)
 
     # Update graph data
@@ -187,7 +187,7 @@ def result(request, query):
     for child_query in search1['suggestions']:
 
         # Search and update database
-        search2 = get_google_data(child_query)
+        search2 = google_search(child_query)
         database_update(search2)
 
         # Update graph data
@@ -213,12 +213,12 @@ def result(request, query):
 
     # Bulk create
     if bulk_edge_create:
-        settings.DEBUG and print(f"* Edge - bulk create {len(bulk_edge_create)}.")
+        settings.DEBUG and print(f"* Edges - {len(bulk_edge_create)} created")
         Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
 
     # Bulk delete
     if bulk_edge_delete_ids:
-        settings.DEBUG and print(f"* Edge - bulk delete {len(bulk_edge_delete_ids)}.")
+        settings.DEBUG and print(f"* Edges - {len(bulk_edge_delete_ids)} deleted")
         # Chunk deletions
         i_start = 0
         i_end = n_bulk
@@ -228,10 +228,10 @@ def result(request, query):
             i_end += n_bulk
 
     # Debug
-    if settings.DEBUG and connection.queries:
-        #for q in connection.queries:
-        #    print(q)
-        print(f"* Made {len(connection.queries)} queries to the database")
+    if settings.DEBUG:
+        nodes_created[0] and print(f"* Nodes - {nodes_created[0]} created")
+        if connection.queries:
+            print(f"* Made {len(connection.queries)} queries to the database")
 
     ########################################################
     # Form graph data
