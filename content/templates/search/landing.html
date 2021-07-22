@@ -3,12 +3,22 @@
 
 {% block content %}
 
-	{# Stats #}
-    <div class="h5">Network Stats</div>
+    {# About #}
+    <div class="h5">About</div>
+    <p>Have you ever noticed that when you start typing something into Google it will attempt to autocomplete your query? This project uses those autocomplete suggestions to create a multi-level network graph from each query. For example, try the word <a href="{% url 'search:result' 'blueberry' %}">blueberry</a>.</p>
+    Network Stats
 	<ul>
         <li>Nodes - {{stats.nodes}}</li>
         <li>Edges - {{stats.edges}}</li>
     </ul>
+
+    {# Export #}
+    {% comment %}
+    <div class="h5">Export</div>
+	<ul>
+        <li><a href="">Pajek format</a> - Can be imported into a variety of network analysis tools, such as Gephi, NetworkX, NodeXL, Pajek, NetMiner, and Social Network Visualizer.</li>
+    </ul>
+    {% endcomment %}
 
 {% endblock %}
 
