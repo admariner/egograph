@@ -23,6 +23,6 @@ $('#website_button').click(function () {
         alert.show('Please enter a search query.');
     } else {
         alert.hide();
-        window.location = '/graph/' + query
+        window.location = '/graph/' + query + '/'
     }
 });
