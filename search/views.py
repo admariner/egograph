@@ -7,7 +7,8 @@ import requests # for getting URL
 import urllib # parsing url
 import json # for parsing json
 from time import sleep # rate limiting
-import networkx as nx
+import networkx as nx # network analysis
+from datetime import datetime, timezone, timedelta # for getting time
 
 #####################################################################################
 # Page - Landing
@@ -32,14 +33,18 @@ def result(request, query):
 
     # Variables
     clean_query = query.lower().strip()
+    dt_now = datetime.now(timezone.utc)
+    dt_30_days_ago = dt_now - timedelta(days=30)
 
-    # Placeholders
-    nodes_created = [0]
+    # Bulk containers
     bulk_edge_create = []
+    bulk_edge_update_weight = []
     bulk_edge_delete_ids = []
 
     # Data containers
-    suggestion_history = {'all': []} # {all: ['a', 'b', 'c'], 1: ['a'], 2: ['b', 'c']} # sorted by relevance
+    nodes_created = [0]
+    node_query_obj_dict = {} # {'blueberry': {'obj': obj, 'created': True, 'child_edge_qs': qs)}
+    suggestion_history = {'all': []} # {all: ['a', 'b', 'c'], 1: ['a'], 2: ['b', 'c']} # sorted by weight
     graph_nodes = {clean_query: {'value': 1, 'color': '#fdae6b'}} # {'a': 2} size of node
     graph_edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
 
@@ -59,18 +64,18 @@ def result(request, query):
                     return True
 
     # Clean suggestion phrases to remove query (the query can sometimes change)
-    def clean_suggestions(suggestion_list, relevance_list):
+    def clean_suggestions(suggestion_list, weight_list):
         results = {
             'suggestions': [],
-            'relevance': [],
+            'weights': [],
         }
         # For each suggestion
         for i, phrase in enumerate(suggestion_list):
-            # Get relevance
+            # Get weight
             try:
-                relevance = relevance_list[i]
+                weight = weight_list[i]
             except:
-                relevance = 0
+                weight = 0
             # Split words
             word_split = phrase.split()
             # Remove each word until you get to operator
@@ -82,7 +87,7 @@ def result(request, query):
             if not_excluded(word_split):
                 # Join words back into phrase and add to results
                 results['suggestions'].append(' '.join(word_split))
-                results['relevance'].append(relevance)
+                results['weights'].append(weight)
         # Return
         return results
 
@@ -96,19 +101,64 @@ def result(request, query):
         query = query if query[-len(operator):] != operator else query[:len(query) - len(operator)].strip()
         # Add operator back
         query_operator = f"{query} {operator}"
-        # Google search
-        url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query_operator)}'
-        response_json = requests.request("GET", url).json()
-        # Clean suggestions
-        suggestion_list = response_json[1]
-        relevance_list = response_json[4]['google:suggestrelevance'] if 'google:suggestrelevance' in response_json[4] else []
-        cleaned_suggestions = clean_suggestions(suggestion_list, relevance_list)
+        # Node object - if already stored, get
+        if query in node_query_obj_dict:
+            # Get stored data
+            node_obj = node_query_obj_dict[query]['obj']
+            node_created = node_query_obj_dict[query]['created']
+            # If children are stored, get
+            if 'child_edge_qs' in node_query_obj_dict[query]:
+                node_child_edge_qs = node_query_obj_dict[query]['child_edge_qs']
+            # Else, pull children and store
+            else:
+                node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
+                node_query_obj_dict[query]['child_edge_qs'] = node_child_edge_qs
+        # Node object - else, hasn't been stored
+        else:
+            # Get/create
+            node_obj, node_created = Node.objects.get_or_create(name=query)
+            nodes_created[0] += 1 if node_created else 0
+            # Store data
+            node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
+            node_query_obj_dict[query] = {
+                'obj': node_obj,
+                'created': node_created,
+                'child_edge_qs': node_child_edge_qs,
+            }
+        # Check if this query has recently been pulled in the database
+        node_recently_pulled = False
+        if node_obj.date_children_last_pulled and dt_30_days_ago:
+            node_recently_pulled = node_obj.date_children_last_pulled >= dt_30_days_ago
+        # If node recently pulled
+        if node_recently_pulled:
+            # Debug
+            settings.DEBUG and print(f"* Recently pulled, not searching - {query}")
+            # Get lists, ordered by weight, highest to lowest
+            suggestion_list = node_child_edge_qs.values_list('child__name', flat=True)
+            weight_list = node_child_edge_qs.values_list('weight', flat=True)
+        # Else, no obj / recent obj
+        else:
+            # Google search
+            url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query_operator)}'
+            response_json = requests.request("GET", url).json()
+            # Clean suggestions
+            raw_suggestion_list = response_json[1]
+            raw_weight_list = response_json[4]['google:suggestrelevance'] if 'google:suggestrelevance' in response_json[4] else []
+            cleaned_suggestions = clean_suggestions(raw_suggestion_list, raw_weight_list)
+            # Form lists
+            suggestion_list = cleaned_suggestions['suggestions']
+            weight_list = cleaned_suggestions['weights']
         # Return data
         data = {
+            # Model info
+            'node_obj': node_obj,
+            'node_created': node_created,
+            # Query info
             'query': query,
             'query_operator': query_operator,
-            'suggestions': cleaned_suggestions['suggestions'],
-            'relevance': cleaned_suggestions['relevance'],
+            # Search results
+            'suggestions': list(suggestion_list),
+            'weights': list(weight_list),
         }
         # Debug
         #settings.DEBUG and print(f"\n{response_json}\n\n{data}")
@@ -116,45 +166,80 @@ def result(request, query):
 
     # Make database updates
     def database_update(search_results):
+        # Parent info
+        parent_query = search_results['query']
+        parent_obj = search_results['node_obj']
+        parent_created = search_results['node_created']
+        # Update parent date_children_last_pulled
+        parent_obj.date_children_last_pulled = dt_now
+        parent_obj.save()
         # If there are any search results
         if search_results['suggestions']:
-            # Parent - get or create
-            parent_obj, parent_created = Node.objects.get_or_create(name=search_results['query'])
-            nodes_created[0] += 1 if parent_created else 0
             # Children - bulk create setup
-            child_obj_relevance = []
-            child_obj_ids = []
-            for i, child in enumerate(search_results['suggestions']):
-                child_obj, child_created = Node.objects.get_or_create(name=child)
-                nodes_created[0] += 1 if child_created else 0
-                child_obj_relevance.append([child_obj, search_results['relevance'][i]]) # [obj, 500]
-                child_obj_ids.append(child_obj.id)
+            child_node_obj_weights = []
+            child_node_obj_ids = []
+            child_node_obj_id_weight_dict = {}
+            for i, child_query in enumerate(search_results['suggestions']):
+                # Child node object - if already stored, get
+                if child_query in node_query_obj_dict:
+                    child_node_obj = node_query_obj_dict[child_query]['obj']
+                    child_created = node_query_obj_dict[child_query]['created']
+                # Child node object - else, hasn't been stored
+                else:
+                    # Get/create
+                    child_node_obj, child_created = Node.objects.get_or_create(name=child_query)
+                    nodes_created[0] += 1 if child_created else 0
+                    # Store data
+                    node_query_obj_dict[child_query] = {
+                        'obj': child_node_obj,
+                        'created': child_created,
+                    }
+                # Get variables
+                child_node_obj_id = child_node_obj.id
+                child_weight = search_results['weights'][i]
+                # Fill data containers
+                child_node_obj_weights.append([child_node_obj, child_weight]) # [obj, 500]
+                child_node_obj_ids.append(child_node_obj_id) # [1,2,3,4]
+                child_node_obj_id_weight_dict[child_node_obj_id] = child_weight # {1: 500}
             # Children - If parent is new, create edges for all children
             if parent_created:
-                for child_obj, relevance in child_obj_relevance: 
+                for child_node_obj, weight in child_node_obj_weights: 
                     bulk_edge_create.append(Edge(
                         parent=parent_obj,
-                        child=child_obj,
-                        weight=relevance,
+                        child=child_node_obj,
+                        weight=weight,
                     ))
-            # Children - Else, parent not new - edges may be added or deleted
+            # Children - Else, parent not new - edges may be added, updated, or deleted
             else:
-                # Get db list of parent's children
-                db_edge_ids = Edge.objects.filter(parent=parent_obj).values_list('child', flat=True)
-                # Check create - If current child not in children, create
-                for child_obj, relevance in child_obj_relevance: 
-                    if child_obj.id not in db_edge_ids:
+                # Get children in the database
+                db_child_qs = parent_obj.edges_as_parent.select_related('child').all().order_by('-weight')
+                db_child_ids = db_child_qs.values_list('child', flat=True)
+                # For each of the database children - UPDATE or DELETE
+                for db_child_edge_obj in db_child_qs:
+                    # Get ids
+                    db_edge_id = db_child_edge_obj.id
+                    db_child_id = db_child_edge_obj.child.id
+                    # If db child IN current children
+                    if db_child_id in child_node_obj_ids:
+                        # If weights are different
+                        weight_should_be = child_node_obj_id_weight_dict[db_child_id]
+                        if db_child_edge_obj.weight != weight_should_be:
+                            # UPDATE - and append
+                            db_child_edge_obj.weight = weight_should_be
+                            bulk_edge_update_weight.append(db_child_edge_obj)
+                    # DELETE - since db child NOT in current children
+                    else:
+                        bulk_edge_delete_ids.append(db_edge_id)
+                # For each of the current children
+                for child_node_obj, weight in child_node_obj_weights: 
+                    # If not already in database
+                    if child_node_obj.id not in db_child_ids:
+                        # CREATE - since not in database
                         bulk_edge_create.append(Edge(
                             parent=parent_obj,
-                            child=child_obj,
-                            weight=relevance,
+                            child=child_node_obj,
+                            weight=weight,
                         ))
-                # Check delete - if old child not in current children, delete
-                for child_id in db_edge_ids:
-                    if child_id not in child_obj_ids:
-                        qs = Edge.objects.filter(parent=parent_obj, child_id=child_id)
-                        if qs.exists():
-                            bulk_edge_delete_ids.append(qs.first().id)
         # Else, no results / stub
         else:
             settings.DEBUG and print(f"* No search results - {search_results['query']}")
@@ -172,14 +257,14 @@ def result(request, query):
             else:
                 graph_nodes[suggestion]['value'] += 1
             # Add edge
-            weight = search_results['relevance'][i]
+            weight = search_results['weights'][i]
             graph_edges.append({
                 'from': search_results['query'],
                 'to': suggestion,
                 'value': weight,
             })
 
-    # Add suggestions to history (already sorted by relevance)
+    # Add suggestions to history (already sorted by weight)
     def update_suggestion_history(search_results, level):
         # Add specific level
         if level in suggestion_history and isinstance(suggestion_history[level], list): 
@@ -245,6 +330,10 @@ def result(request, query):
     # Bulk create
     if bulk_edge_create:
         Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
+
+    # Bulk update
+    if bulk_edge_update_weight:
+        Edge.objects.bulk_update(bulk_edge_update_weight, ['weight'], batch_size=n_bulk)
 
     # Bulk delete
     if bulk_edge_delete_ids:
@@ -344,11 +433,8 @@ def result(request, query):
     # Debug
 
     if settings.DEBUG:
-        # Edge list
-        print("-" * 100)
-        print(edgelist)
-        print("-" * 100)
         # Suggestion history
+        print("-" * 100)
         print(f"* {len(suggestion_history) - 1} levels of search")
         for level, suggestions in suggestion_history.items():
             if level != 'all':
@@ -356,7 +442,7 @@ def result(request, query):
         # Database
         print("-" * 100)
         print(f"* Nodes - {nodes_created[0]} created")
-        print(f"* Edges - {len(bulk_edge_create)} created, {len(bulk_edge_delete_ids)} deleted")
+        print(f"* Edges - {len(bulk_edge_create)} created, {len(bulk_edge_update_weight)} updated, {len(bulk_edge_delete_ids)} deleted")
         print(f"* Database -  {len(connection.queries) if connection.queries else 0} queries")  
         # Networkx
         print("-" * 100)
@@ -367,8 +453,8 @@ def result(request, query):
         google_ranking = []
         [google_ranking.append(x) for x in suggestion_history['all'] if x not in google_ranking and x != clean_query]
         print(f"* Google: {google_ranking[:10]}")
-        print(f"* communicability: {[x[0] for x in communicability if x[0] != clean_query][:10]}")
         print(f"* communicability_exp: {[x[0] for x in communicability_exp if x[0] != clean_query][:10]}")
+        print(f"* communicability: {[x[0] for x in communicability if x[0] != clean_query][:10]}")
         print(f"* centrality: {[x[0] for x in centrality if x[0] != clean_query][:10]}")
         print(f"* voterank: {[x for x in nx.voterank(G) if x != clean_query][:10]}")
         # NOTES
