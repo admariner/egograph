@@ -43,7 +43,7 @@ def result(request, query):
 
     # Data containers
     nodes_created = [0]
-    node_query_obj_dict = {} # {'blueberry': {'obj': obj, 'created': True, 'child_edge_qs': qs)}
+    node_query_obj_dict = {} # {'blueberry': (node_obj, node_created)}
     suggestion_history = {'all': []} # {all: ['a', 'b', 'c'], 1: ['a'], 2: ['b', 'c']} # sorted by weight
     graph_nodes = {clean_query: {'value': 1, 'color': '#fdae6b'}} # {'a': 2} size of node
     graph_edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
@@ -103,28 +103,14 @@ def result(request, query):
         query_operator = f"{query} {operator}"
         # Node object - if already stored, get
         if query in node_query_obj_dict:
-            # Get stored data
-            node_obj = node_query_obj_dict[query]['obj']
-            node_created = node_query_obj_dict[query]['created']
-            # If children are stored, get
-            if 'child_edge_qs' in node_query_obj_dict[query]:
-                node_child_edge_qs = node_query_obj_dict[query]['child_edge_qs']
-            # Else, pull children and store
-            else:
-                node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
-                node_query_obj_dict[query]['child_edge_qs'] = node_child_edge_qs
+            node_obj, node_created = node_query_obj_dict[query]
         # Node object - else, hasn't been stored
         else:
             # Get/create
             node_obj, node_created = Node.objects.get_or_create(name=query)
             nodes_created[0] += 1 if node_created else 0
             # Store data
-            node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
-            node_query_obj_dict[query] = {
-                'obj': node_obj,
-                'created': node_created,
-                'child_edge_qs': node_child_edge_qs,
-            }
+            node_query_obj_dict[query] = (node_obj, node_created)
         # Check if this query has recently been pulled in the database
         node_recently_pulled = False
         if node_obj.date_children_last_pulled and dt_30_days_ago:
@@ -133,6 +119,8 @@ def result(request, query):
         if node_recently_pulled:
             # Debug
             settings.DEBUG and print(f"* Recently pulled, not searching - {query}")
+            # Get children
+            node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
             # Get lists, ordered by weight, highest to lowest
             suggestion_list = node_child_edge_qs.values_list('child__name', flat=True)
             weight_list = node_child_edge_qs.values_list('weight', flat=True)
@@ -167,7 +155,6 @@ def result(request, query):
     # Make database updates
     def database_update(search_results):
         # Parent info
-        parent_query = search_results['query']
         parent_obj = search_results['node_obj']
         parent_created = search_results['node_created']
         # Update parent date_children_last_pulled
@@ -182,18 +169,14 @@ def result(request, query):
             for i, child_query in enumerate(search_results['suggestions']):
                 # Child node object - if already stored, get
                 if child_query in node_query_obj_dict:
-                    child_node_obj = node_query_obj_dict[child_query]['obj']
-                    child_created = node_query_obj_dict[child_query]['created']
+                    child_node_obj, child_created = node_query_obj_dict[child_query]
                 # Child node object - else, hasn't been stored
                 else:
                     # Get/create
                     child_node_obj, child_created = Node.objects.get_or_create(name=child_query)
                     nodes_created[0] += 1 if child_created else 0
                     # Store data
-                    node_query_obj_dict[child_query] = {
-                        'obj': child_node_obj,
-                        'created': child_created,
-                    }
+                    node_query_obj_dict[child_query] = (child_node_obj, child_created)
                 # Get variables
                 child_node_obj_id = child_node_obj.id
                 child_weight = search_results['weights'][i]
@@ -212,7 +195,7 @@ def result(request, query):
             # Children - Else, parent not new - edges may be added, updated, or deleted
             else:
                 # Get children in the database
-                db_child_qs = parent_obj.edges_as_parent.select_related('child').all().order_by('-weight')
+                db_child_qs = parent_obj.edges_as_parent.select_related('child').all()
                 db_child_ids = db_child_qs.values_list('child', flat=True)
                 # For each of the database children - UPDATE or DELETE
                 for db_child_edge_obj in db_child_qs:
