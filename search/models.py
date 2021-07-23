@@ -9,6 +9,7 @@ class Node(models.Model):
     # Fields
     name = models.CharField(max_length=1000, unique=True) # must be unique
     date_created = models.DateTimeField(auto_now_add=True)
+    date_children_last_pulled = models.DateTimeField(null=True, blank=True) # not required
 
     # Admin naming
     class Meta:
@@ -26,12 +27,12 @@ class Edge(models.Model):
     """Parent to child edges."""
 
     # Example related_name queries
-    # query_obj.parents.all()
-    # query_obj.children.count()
+    # node_obj.edges_as_parent.all()
+    # node_obj.edges_as_child.count()
 
     # One to many relationship on Parent (delete row if Parent is deleted)
-    parent = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='as_parent')
-    child = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='as_child')
+    parent = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='edges_as_parent')
+    child = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='edges_as_child')
     weight = models.PositiveIntegerField()
     date_created = models.DateTimeField(auto_now_add=True)
 
