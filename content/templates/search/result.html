@@ -5,6 +5,14 @@
 {% block page_title %}{{input_value}} - EgoGraph{% endblock %}
 
 
+{% block head %}
+
+	{# Page CSS #}
+	<link rel="stylesheet" href="{% static 'css/result.css' %}">
+
+{% endblock %}
+
+
 {% block content %}
 
 	{# Suggestions #}
@@ -20,7 +28,7 @@
 						<ol class="list-group">
 							{% for suggestion in suggestions.google|slice:":5" %}
 								<a href="{% url 'search:result' suggestion %}" class="list-group-item list-group-item-action">
-									{{forloop.counter}}. {{suggestion}}
+									<span class="text-muted-lighter">{{forloop.counter}}.</span>&nbsp; {{suggestion}}
 								</a>
 							{% endfor%}
 						</ol>
@@ -29,7 +37,7 @@
 						<ol class="list-group">
 							{% for suggestion in suggestions.google|slice:"5:" %}
 								<a href="{% url 'search:result' suggestion %}" class="list-group-item list-group-item-action">
-									{{forloop.counter|add:"5"}}. {{suggestion}}
+									<span class="text-muted-lighter">{{forloop.counter|add:"5"}}.</span>&nbsp; {{suggestion}}
 								</a>
 							{% endfor%}
 						</ol>
@@ -46,7 +54,7 @@
 						<ol class="list-group">
 							{% for suggestion in suggestions.communicability|slice:":5" %}
 								<a href="{% url 'search:result' suggestion %}" class="list-group-item list-group-item-action">
-									{{forloop.counter}}. {{suggestion}}
+									<span class="text-muted-lighter">{{forloop.counter}}.</span>&nbsp; {{suggestion}}
 								</a>
 							{% endfor%}
 						</ol>
@@ -55,7 +63,7 @@
 						<ol class="list-group">
 							{% for suggestion in suggestions.communicability|slice:"5:" %}
 								<a href="{% url 'search:result' suggestion %}" class="list-group-item list-group-item-action">
-									{{forloop.counter|add:"5"}}. {{suggestion}}
+									<span class="text-muted-lighter">{{forloop.counter|add:"5"}}.</span>&nbsp; {{suggestion}}
 								</a>
 							{% endfor%}
 						</ol>
@@ -65,8 +73,14 @@
 		</div>
 	</div>
 
-	{# Stats #}
+	{# Graph #}
 	<div class="mb-4">
+		<div class="h4 mb-3">Network Graph</div>
+		<div id="graph" class="w-100 border mb-3"></div>
+	</div>
+
+	{# Stats #}
+	<div class="mb-5">
 		<div class="h4 mb-3">Network Stats</div>
 		{##}
 		<div class="row gx-3 gx-sm-4">
@@ -87,12 +101,6 @@
 				</ul>
 			</div>
 		</div>
-	</div>
-
-	{# Graph #}
-	<div class="mb-4">
-		<div class="h4 mb-3">Network Graph</div>
-		<div id="graph" class="w-100 border mb-3"></div>
 	</div>
 
 {% endblock %}
