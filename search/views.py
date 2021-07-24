@@ -117,8 +117,6 @@ def result(request, query):
             node_recently_pulled = node_obj.date_children_last_pulled >= dt_30_days_ago
         # If node recently pulled
         if node_recently_pulled:
-            # Debug
-            settings.DEBUG and print(f"* Recently pulled, not searching - {query}")
             # Get children
             node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
             # Get lists, ordered by weight, highest to lowest
@@ -148,8 +146,6 @@ def result(request, query):
             'suggestions': list(suggestion_list),
             'weights': list(weight_list),
         }
-        # Debug
-        #settings.DEBUG and print(f"\n{response_json}\n\n{data}")
         return data
 
     # Make database updates
@@ -223,10 +219,7 @@ def result(request, query):
                             child=child_node_obj,
                             weight=weight,
                         ))
-        # Else, no results / stub
-        else:
-            settings.DEBUG and print(f"* No search results - {search_results['query']}")
-            
+
     # Update graph data
     def update_graph(search_results, color):
         # For each suggestion
@@ -407,10 +400,17 @@ def result(request, query):
     except:
         communicability_exp = []
 
-    # Centrality
-    centrality = [(n, v) for n,v in nx.degree_centrality(G).items()]
-    centrality.sort(key=lambda x:x[1])
-    centrality.reverse()
+    # Centrality - degree
+    centrality_degree = [(n, v) for n,v in nx.degree_centrality(G).items()]
+    centrality_degree.sort(key=lambda x:x[1])
+    centrality_degree.reverse()
+
+    ########################################################
+    # Misc
+
+    # Create ranked list of google suggestions
+    google_suggestions_ranked = []
+    [google_suggestions_ranked.append(x) for x in suggestion_history['all'] if x not in google_suggestions_ranked and x != clean_query]
 
     ########################################################
     # Debug
@@ -433,28 +433,44 @@ def result(request, query):
         # Rankings
         print("-" * 100)
         print("RANKINGS")
-        google_ranking = []
-        [google_ranking.append(x) for x in suggestion_history['all'] if x not in google_ranking and x != clean_query]
-        print(f"* Google: {google_ranking[:10]}")
-        print(f"* communicability_exp: {[x[0] for x in communicability_exp if x[0] != clean_query][:10]}")
-        print(f"* communicability: {[x[0] for x in communicability if x[0] != clean_query][:10]}")
-        print(f"* centrality: {[x[0] for x in centrality if x[0] != clean_query][:10]}")
-        print(f"* voterank: {[x for x in nx.voterank(G) if x != clean_query][:10]}")
+        n_rankings = 5
+        n_ljust = 25
+        #
+        print(f"* {'Google autocomplete'.ljust(n_ljust)} - {google_suggestions_ranked[:n_rankings]}")
+        print(f"* {'Communicability (exp)'.ljust(n_ljust)} - {[x[0] for x in communicability_exp if x[0] != clean_query][:n_rankings]}")
+        print(f"* {'Communicability'.ljust(n_ljust)} - {[x[0] for x in communicability if x[0] != clean_query][:n_rankings]}")
+        print(f"* {'Deg. centrality'.ljust(n_ljust)} - {[x[0] for x in centrality_degree if x[0] != clean_query][:n_rankings]}")
+        print(f"* {'Voterank (undir)'.ljust(n_ljust)} - {[x for x in nx.voterank(G2) if x != clean_query][:n_rankings]}")
         # NOTES
             # Node-centered metrics are preferable because they take into account a starting point.
-                # Google
-                # Communicability
-            # Graph-wide metrics can be really bad because they don't start at a specific node. 
-            # So in a graph with many levels they can rank something far away from the initial query.
-                # Centrality
-                # Voterank 
+                # Google - ???
+                # Communicability - starting at a node, how many walks end up at other nodes
+            # Graph-wide metrics don't start at a specific node. So in a graph with many levels they can rank something far from the initial query.
+                # Degree centrality
+                    # Sorted by the fraction of nodes each is connected to.
+                    # Takes into account 2nd-level networks more. So will pick nodes with strong 2nd-level neighors, even if 1st-level is small.
+                # Voterank
+                    # Each node votes for its neighbors through a series of rounds.
+                    # Doesn't take into account 2nd-level networks. So it could discount nodes with influential neighbors.
         # Fin
         print("-" * 100)
 
     ########################################################
+    # Render
+
+    # Number of suggestions to show
+    n_rankings = 10
 
     # Render
     return render(request, 'search/result.html', context = {
         'input_value': clean_query,
         'graph_data': json.dumps(graph_data),
+        'suggestions': {
+            'google': google_suggestions_ranked[:n_rankings],
+            'communicability': [x[0] for x in communicability_exp if x[0] != clean_query][:n_rankings]
+        },
+        'stats': {
+            'nodes': G.number_of_nodes(),
+            'edges': G.number_of_edges(),
+        }
     })
