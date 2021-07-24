@@ -48,8 +48,20 @@ def result(request, query):
     # Data containers
     nodes_created = [0]
     node_query_obj_dict = {} # {'blueberry': (node_obj, node_created)}
-    graph_nodes = {clean_query: {'value': 1, 'color': '#fdae6b'}} # {'a': 2} size of node
-    graph_edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
+
+    # Graph
+    collapse_parallel_edges_on_graph = True # average parallel edges together into one value
+    graph_colors = [
+        '#fdae6b',
+        '#f3e24d',
+        '#36c576',
+        '#2acdc0'
+    ]
+
+    #c5493c
+    #6baed6
+    #87d0af
+    #0ca798
 
     #################################################
     # Functions
@@ -149,25 +161,12 @@ def result(request, query):
             'suggestions': list(suggestion_list),
             'weights': list(weight_list),
         }
-        # History - searches (sorted by weight)
-        '''
+        # History - searches (sorted by weight). Use copy to avoid bugs.
         search_history[query] = {
             'level': level,
-            'suggestions': data['suggestions'],
-            'weights': data['weights'],
+            'suggestions': data['suggestions'].copy(),
+            'weights': data['weights'].copy(),
         }
-
-        print()
-        print(f"{level} - {query}")
-        for key, v in search_history.items():
-            print(f"{key} - {len(v['suggestions'])}")
-
-        if 'burgundy' in search_history:
-            #print(search_history['burgundy'])
-            #print()
-            pass
-
-        '''
         # History - suggestions history (sorted by weight)
         if level in suggestion_history and isinstance(suggestion_history[level], list): 
             suggestion_history[level].extend(data['suggestions'])
@@ -248,25 +247,41 @@ def result(request, query):
                             weight=weight,
                         ))
 
-    # Update graph data
-    def update_graph(search_results, color):
-        # For each suggestion
-        for i, suggestion in enumerate(search_results['suggestions']):
-            # Add node
-            if suggestion not in graph_nodes:
-                graph_nodes[suggestion] = {
-                    'value': 1,
-                    'color': color,
-                }
-            else:
-                graph_nodes[suggestion]['value'] += 1
-            # Add edge
-            weight = search_results['weights'][i]
-            graph_edges.append({
-                'from': search_results['query'],
-                'to': suggestion,
-                'value': weight,
-            })
+    # Perform bulk database actions
+    def database_bulk_actions():
+        # Bulk create
+        if bulk_edge_create:
+            Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
+        # Bulk update
+        if bulk_edge_update_weight:
+            Edge.objects.bulk_update(bulk_edge_update_weight, ['weight'], batch_size=n_bulk)
+        # Bulk delete
+        if bulk_edge_delete_ids:
+            # Chunk deletions
+            i_start = 0
+            i_end = n_bulk
+            while i_start < len(bulk_edge_delete_ids):
+                Edge.objects.filter(id__in=bulk_edge_delete_ids[i_start:i_end]).delete()
+                i_start = i_end
+                i_end += n_bulk
+
+    # Create edgelist [(from, to, value)]
+    def create_edgelist():
+        # Placeholder
+        data = []
+        # For each query 
+        for from_node, to_results in search_history.items():
+            # For each suggestion
+            for i, to_node in enumerate(to_results['suggestions']):
+                # Add to edgelist
+                value = to_results['weights'][i]
+                data.append((from_node, to_node, value))
+        # Return
+        return data
+
+    # Create graph data
+    def create_graph_data():
+        pass
 
     #################################################
     # Google search, update database, update graph data
@@ -274,7 +289,6 @@ def result(request, query):
     # 1st level search
     search1 = get_search_data(clean_query, 1)
     database_update(search1)
-    update_graph(search1, '#f3e24d')
 
     # For each child of 1st level (if it exists)
     if 1 in suggestion_history:
@@ -283,10 +297,15 @@ def result(request, query):
             # 2nd level search
             search2 = get_search_data(child1_query, 2)
             database_update(search2)
-            update_graph(search2, '#36c576') 
+
+    # Make list of unique nodes
+    unique_nodes = set()
+    for level, suggestions in suggestion_history.items():
+        for s in suggestions:
+            unique_nodes.add(s)
 
     # If there's not enough nodes
-    if len(graph_nodes) <= 15:
+    if len(unique_nodes) <= 15:
 
         # For each child of 2nd level (if it exists)
         if 2 in suggestion_history:
@@ -295,136 +314,109 @@ def result(request, query):
                 # 3rd level search
                 search3 = get_search_data(child2_query, 3)
                 database_update(search3)
-                update_graph(search3, '#2acdc0')
 
-    #################################################
-    # Edge - bulk actions
+    # Perform db bulk create, update, delete
+    database_bulk_actions()
 
-    # Bulk create
-    if bulk_edge_create:
-        Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
+    ########################################################
+    # Graph - settings and placeholders
 
-    # Bulk update
-    if bulk_edge_update_weight:
-        Edge.objects.bulk_update(bulk_edge_update_weight, ['weight'], batch_size=n_bulk)
-
-    # Bulk delete
-    if bulk_edge_delete_ids:
-        # Chunk deletions
-        i_start = 0
-        i_end = n_bulk
-        while i_start < len(bulk_edge_delete_ids):
-            Edge.objects.filter(id__in=bulk_edge_delete_ids[i_start:i_end]).delete()
-            i_start = i_end
-            i_end += n_bulk
+    # Data containers
+    graph_node_dict = {clean_query: {'value': 1, 'color': graph_colors[0]}} # {'malbec': {'value': 9, 'color': 'hex'}
+    graph_data = {
+        'nodes': [], # [{'id': 1, 'label': 'x', 'value': 500, 'color': 'hex'}]
+        'edges': [], # [{ 'from': 0, 'to': 1, 'value': 1250 }]
+    }
 
     ########################################################
     # Create graph data
 
-    #print(search_history['burgundy'])
-
-    graph_colors = [
-        '#fdae6b',
-        '#f3e24d',
-        '#36c576',
-        '#2acdc0'
-    ]
-
-    #c5493c
-    #6baed6
-    #87d0af
-    #0ca798
-
-    graph_nodes2 = {clean_query: {'value': 1, 'color': graph_colors[0]}}
-    graph_edges2 = []
-
-    '''
-    # For each query 
+    # Create node dict
     for search_query, search_results in search_history.items():
         # For each suggestion
         for i, suggestion in enumerate(search_results['suggestions']):
             # If already added, update
-            if suggestion in graph_nodes2:
-                graph_nodes2[suggestion]['value'] += 1
+            if suggestion in graph_node_dict:
+                graph_node_dict[suggestion]['value'] += 1 # increases size of node
             # Else, add
             else:
-                graph_nodes2[suggestion] = {
+                graph_node_dict[suggestion] = {
                     'value': 1,
                     'color': graph_colors[search_results['level']],
                 }
-            # Add edge
-            print(f"{search_query} - {suggestion} - {i}")
-            graph_edges2.append({
-                'from': search_query,
-                'to': suggestion,
-                'value': search_results['weights'][i],
-            })
-    '''
 
-    print(len(graph_nodes))
-    print(len(graph_nodes2))
-    #print(graph_edges == graph_edges2)
+    # Make node list from node dict
+    graph_node_list = list(graph_node_dict.keys())
 
-
-    #print(graph_nodes) # {'malbec': {'value': 9, 'color': '#fdae6b'}
-    #print(graph_edges) # [{'from': 'malbec', 'to': 'merlot', 'value': 1251}
-
-    # Placeholders
-    graph_data = {
-        'nodes': [],
-        'edges': [],
-    }
-    edge_combos = {}
-
-    # Add nodes
-    node_list = list(graph_nodes.keys())
-    for i, node in enumerate(node_list):
+    # Convert node dict to list
+    for i, node in enumerate(graph_node_list):
         graph_data['nodes'].append({
             'id': i,
-            'value': graph_nodes[node]['value'],
             'label': node,
-            'color': graph_nodes[node]['color'],
+            'value': graph_node_dict[node]['value'],
+            'color': graph_node_dict[node]['color'],
         })
 
-    # Add edges
-    for edge in graph_edges:
-        # Get indices
-        from_index = node_list.index(edge['from'])
-        to_index = node_list.index(edge['to'])
+    # Edges - if we're allowing parallel edges, then simply add all
+    if not collapse_parallel_edges_on_graph:
+        # Cycle through edge data
+        for from_node, to_node, value in create_edgelist():
+            # Get indices
+            from_index = graph_node_list.index(from_node)
+            to_index = graph_node_list.index(to_node)
+            # Add to graph
+            graph_data['edges'].append({
+                'from': from_index,
+                'to': to_index,
+                'value': value,
+            })
 
-        # From/To - Check if combo already exists (only show one line)
-        if from_index in edge_combos:
-            if to_index in edge_combos[from_index]:
-                continue # skip loop
+    # Edges - else, we're collapsing parallel edges. 
+    # Only one edge will be added for each parallel. Need to track all those created and average weights.
+    else:
+        # Data container
+        edge_lookup = {} # {from_index: {to_index: [value]}
+        # Cycle through edge data
+        for from_node, to_node, value in create_edgelist():
+            # Get indices
+            from_index = graph_node_list.index(from_node)
+            to_index = graph_node_list.index(to_node)
+            # 1) Need to check if a from/to or to/from exists
+            existing_edge_type = None # 'from_to' or 'to_from'
+            if from_index in edge_lookup and to_index in edge_lookup[from_index]: # from/to
+                existing_edge_type = 'from_to'
+            elif to_index in edge_lookup and from_index in edge_lookup[to_index]: # to/from
+                existing_edge_type = 'to_from'
+            # 2) If nothing already exists, log new data
+            if not existing_edge_type:
+                if from_index in edge_lookup:
+                    edge_lookup[from_index][to_index] = [value]
+                else:
+                    edge_lookup[from_index] = {to_index: [value]}
+            # 3) Else, something exists, add value to that edge
             else:
-                edge_combos[from_index].append(to_index)
-        else:
-            edge_combos[from_index] = [to_index]
-
-        # To/From - Check if combo already exists (only show one line)
-        if to_index in edge_combos:
-            if from_index in edge_combos[to_index]:
-                continue # skip loop
-            else:
-                edge_combos[to_index].append(from_index)
-        else:
-            edge_combos[to_index] = [from_index]
-
-        # Add edge
-        graph_data['edges'].append({
-            'from': from_index,
-            'to': to_index,
-            'value': edge['value'],
-        })
+                if existing_edge_type == 'from_to':
+                    edge_lookup[from_index][to_index].append(value)
+                elif existing_edge_type == 'to_from':
+                    edge_lookup[to_index][from_index].append(value)
+        # After all the data is organized, we can average and create edges
+        for from_index, to_data in edge_lookup.items():
+            for to_index, values in to_data.items():
+                # Average and add
+                graph_data['edges'].append({
+                    'from': from_index,
+                    'to': to_index,
+                    'value': sum(values) / len(values),
+                })
 
     ########################################################
     # Networkx
 
-    # Create edge list
-    edgelist = [(node_list[e['from']], node_list[e['to']], e['value']) for e in graph_data['edges']] # [('a', 'b', 5.0), ('c', 'd', 7.3)]
+    # Create edge list - always use graph data so they match
+    graph_edgelist = [(graph_node_list[e['from']], graph_node_list[e['to']], e['value']) for e in graph_data['edges']] # [(from, to, value)]
 
-    # Make graph
-    G = nx.MultiDiGraph(edgelist)
+    # Make graph 
+    G = nx.MultiDiGraph(graph_edgelist)
     G2 = nx.Graph(G)
 
     # Communicability
