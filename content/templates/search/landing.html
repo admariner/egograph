@@ -34,14 +34,19 @@
 	</div>
 
     {# Export #}
-    {% comment %}
 	<div class="mb-4">
 		<div class="h4 mb-3">Export</div>
+			<ul>
+				<li>
+					<a href="{% url 'export:edgelist' %}">Edgelist</a>
+				</li>
+			</ul>
+		{% comment %}
         <ul>
             <li><a href="">Pajek format</a> - Can be imported into a variety of network analysis tools, such as Gephi, NetworkX, NodeXL, Pajek, NetMiner, and Social Network Visualizer.</li>
         </ul>
+		{% endcomment %}
     </div>
-    {% endcomment %}
 
 {% endblock %}
 

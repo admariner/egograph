@@ -27,6 +27,7 @@ INSTALLED_APPS = [
         # sitemaps
     # Custom apps
     'search',
+    'export',
 ]
 
 # Every time a request hits the Django server it runs through the middleware.

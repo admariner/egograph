@@ -7,8 +7,9 @@ import debug_toolbar
 ################################################################################################
 
 urlpatterns = [
-    # adsf
+    # Apps
     path('', include('search.urls')),
+    path('export/', include('export.urls')),
     # Admin
     path('admin/', admin.site.urls),
 ]
