@@ -50,7 +50,7 @@ def result(request, query):
     node_query_obj_dict = {} # {'blueberry': (node_obj, node_created)}
 
     # Graph
-    collapse_parallel_edges_on_graph = True # average parallel edges together into one value
+    collapse_parallel_edges_on_graph = False # average parallel edges together into one value
     graph_colors = [
         '#fdae6b',
         '#f3e24d',
@@ -161,12 +161,13 @@ def result(request, query):
             'suggestions': list(suggestion_list),
             'weights': list(weight_list),
         }
-        # History - searches (sorted by weight). Use copy to avoid bugs.
-        search_history[query] = {
-            'level': level,
-            'suggestions': data['suggestions'].copy(),
-            'weights': data['weights'].copy(),
-        }
+        # History - search data (sorted by weight). Only add if unique. Use copy to avoid bugs.
+        if query not in search_history:
+            search_history[query] = {
+                'level': level,
+                'suggestions': data['suggestions'].copy(),
+                'weights': data['weights'].copy(),
+            }
         # History - suggestions history (sorted by weight)
         if level in suggestion_history and isinstance(suggestion_history[level], list): 
             suggestion_history[level].extend(data['suggestions'])
@@ -381,26 +382,29 @@ def result(request, query):
             # Get indices
             from_index = graph_node_list.index(from_node)
             to_index = graph_node_list.index(to_node)
-            # 1) Need to check if a from/to or to/from exists
-            existing_edge_type = None # 'from_to' or 'to_from'
-            if from_index in edge_lookup and to_index in edge_lookup[from_index]: # from/to
-                existing_edge_type = 'from_to'
-            elif to_index in edge_lookup and from_index in edge_lookup[to_index]: # to/from
-                existing_edge_type = 'to_from'
-            # 2) If nothing already exists, log new data
-            if not existing_edge_type:
-                if from_index in edge_lookup:
-                    edge_lookup[from_index][to_index] = [value]
+            # 1) If from/to are not the same
+            if from_index != to_index:
+                # 2) Need to check if a from/to or to/from exists
+                existing_edge_type = None # 'from_to' or 'to_from'
+                if from_index in edge_lookup and to_index in edge_lookup[from_index]: # from/to
+                    existing_edge_type = 'from_to'
+                elif to_index in edge_lookup and from_index in edge_lookup[to_index]: # to/from
+                    existing_edge_type = 'to_from'
+                # 3) If nothing already exists, log new data
+                if not existing_edge_type:
+                    if from_index in edge_lookup:
+                        edge_lookup[from_index][to_index] = [value]
+                    else:
+                        edge_lookup[from_index] = {to_index: [value]}
+                # 4) Else, something exists, add value to that edge
                 else:
-                    edge_lookup[from_index] = {to_index: [value]}
-            # 3) Else, something exists, add value to that edge
-            else:
-                if existing_edge_type == 'from_to':
-                    edge_lookup[from_index][to_index].append(value)
-                elif existing_edge_type == 'to_from':
-                    edge_lookup[to_index][from_index].append(value)
+                    if existing_edge_type == 'from_to':
+                        edge_lookup[from_index][to_index].append(value)
+                    elif existing_edge_type == 'to_from':
+                        edge_lookup[to_index][from_index].append(value)
         # After all the data is organized, we can average and create edges
         for from_index, to_data in edge_lookup.items():
+            #settings.DEBUG and print(f"{from_index} - {graph_node_list[from_index]} - {list(to_data.keys())}")
             for to_index, values in to_data.items():
                 # Average and add
                 graph_data['edges'].append({
