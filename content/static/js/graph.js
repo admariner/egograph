@@ -13,6 +13,8 @@ function draw() {
 		edges: graph_data.edges, // [{ 'from': 0, 'to': 1, 'value': 1250 }]
 	};
 	var options = {
+		autoResize: true, // resize graph when container is resized
+		clickToUse: true, // react to mouse and touch events only when active
 		nodes: {
 			shape: "dot",
 			font: {
