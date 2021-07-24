@@ -103,7 +103,7 @@ CELERY_BEAT_SCHEDULE = {
     # Search - pull children for nodes that haven't done so yet
     'pull_children_for_nodes_without_them': { 
         'task': 'search.tasks_beat.pull_children_for_nodes_without_them', 
-        'schedule': crontab() # every minute
+        'schedule': crontab(minute='*/1'), # Every 1 min
     },
 }
 
