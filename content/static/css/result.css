@@ -1,16 +1,36 @@
 /*----------------------------------------------------------*/
 /* BODY */
 
-#graph {
-	height: 780px;
+.suggest-number {
+    color: #bbb;
 }
 
-.text-muted-lighter {
-    color: #939BA2!important;
+.list-group-item:first-child .suggest-link {
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+.suggest-link {
+	padding: .5rem;
+	text-decoration: none;
+	color: #ddd;
+}
+
+.suggest-link:hover {
+	color: #495057;
+}
+
+/* When hovering over suggestion, change bg on suggest-link */
+.list-group-item-action:hover + .suggest-link {
+    background-color: #f8f9fa;
 }
 
 /*----------------------------------------------------------*/
-/* Mobile */
+/* Graph */
+
+#graph {
+	height: 780px;
+}
 
 @media (max-width: 780px) {
 	#graph {
