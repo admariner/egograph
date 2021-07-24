@@ -1,6 +1,6 @@
 from celery import shared_task
 
-from .models import Node, Edge
+from .models import Node
 from .classes.search import Search
 
 from datetime import datetime, timezone, timedelta # for datetimes
