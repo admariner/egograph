@@ -43,9 +43,13 @@
 	color: #495057;
 }
 
-/* When hovering over suggestion, change bg on suggest-ext-link */
-.list-group-item-action:hover + .suggest-ext-link {
+/* When selecting internal link, change bg on external link */
+.suggest-int-link:focus + .suggest-ext-link,
+.suggest-int-link:hover + .suggest-ext-link {
     background-color: #f8f9fa;
+}
+.suggest-int-link:active + .suggest-ext-link {
+    background-color: #e9ecef;
 }
 
 /*----------------------------------------------------------*/
