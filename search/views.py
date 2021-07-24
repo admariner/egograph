@@ -274,7 +274,7 @@ def result(request, query):
             update_suggestion_history(search2, 2)
 
     # If there's not enough nodes
-    if len(graph_nodes) <= 20:
+    if len(graph_nodes) <= 15:
 
         # For each child of 2nd level (if it exists)
         if 2 in suggestion_history:
