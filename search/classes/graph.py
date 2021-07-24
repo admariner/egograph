@@ -1,4 +1,4 @@
-from .models import Edge
+from ..models import Edge
 
 import networkx as nx # network analysis
 import csv # for saving csv
@@ -6,7 +6,7 @@ import csv # for saving csv
 ########################################################
 # Networkx
 
-class Networkx:
+class Graph:
     # Init
     def __init__(self):
         # Create edge list
