@@ -49,3 +49,7 @@ The website uses Django (a python framework) and is hosted on Heroku. It can be 
     ```bash
     python manage.py runserver
     ```
+10. Start async worker. This worker is required to performed asynchronous tasks. Code is for Windows shell. Must be solo pool to work on Windows.
+    ```bash
+    celery -A config worker --pool=prefork -l info
+    ```

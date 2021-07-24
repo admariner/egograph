@@ -1,8 +1,9 @@
+import os
+
+from celery.schedules import crontab # celery beat
 import django_heroku
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
-from pathlib import Path
-import os
 
 ################################################################################################
 # DJANGO SETTINGS
@@ -92,6 +93,18 @@ sentry_sdk.init(
     send_default_pii=True, # add user info to errors
     #debug=True, # logs sentry info to console
 )
+
+################################################################################################
+# CELERY SCHEDULER
+# https://docs.celeryproject.org/en/stable/userguide/periodic-tasks.html
+
+CELERY_BEAT_SCHEDULE = {
+    # Search - pull children for nodes that haven't done so yet
+    'pull_children_for_nodes_without_them': { 
+        'task': 'search.tasks_beat.pull_children_for_nodes_without_them', 
+        'schedule': crontab() # every minute
+    },
+}
 
 ################################################################################################
 # STATIC FILES - served from heroku using django-whitenoise
