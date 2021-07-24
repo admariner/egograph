@@ -59,7 +59,9 @@ def result(request, query):
                 search.google_and_prep_database(child2_query, 3)
 
     # Perform db bulk create, update, delete
+    settings.DEBUG and print("-" * 100)
     search.database_bulk_actions()
+    settings.DEBUG and print("-" * 100)
 
     ########################################################
     # Create graph data
@@ -222,6 +224,7 @@ def result(request, query):
     if settings.DEBUG:
         # Suggestion history
         print(f"* {len(search.suggestion_history)} levels of search")
+        print(f"> 0 - {[clean_query]}")
         for level, suggestions in search.suggestion_history.items():
             print(f"> {level} - {suggestions}")
         print("-" * 100)

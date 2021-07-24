@@ -14,27 +14,33 @@ from datetime import datetime, timezone, timedelta # for getting time
 class Search:
     "Class that handles google searching and database updating"
 
-    # Settings
-    operator = 'vs' # adds this to each search query if it's not already there
-    rate_limit = .05 # time between each query (seconds)
-    n_bulk = 100 # bulk update size (100 max)
+    #################################################
+    # Variables
 
-    # Dates
-    dt_now = datetime.now(timezone.utc)
-    dt_30_days_ago = dt_now - timedelta(days=30)
+    # Init
+    def __init__(self):
+        
+        # Settings
+        self.operator = 'vs' # adds this to each search query if it's not already there
+        self.rate_limit = .05 # time between each query (seconds)
+        self.n_bulk = 100 # bulk update size (100 max)
 
-    # Node information
-    nodes_created = 0
-    node_query_obj_dict = {} # {'blueberry': (node_obj, node_created)}
+        # Dates
+        self.dt_now = datetime.now(timezone.utc)
+        self.dt_30_days_ago = self.dt_now - timedelta(days=30)
 
-    # Search history
-    search_history = {} # {1: {'query': {'level': 1, 'suggestions': ['a', 'b'], 'weights': [600, 400]}} # sorted by weight
-    suggestion_history = {} # {1: ['a'], 2: ['b', 'c']} # sorted by weight
+        # Node information
+        self.nodes_created = 0
+        self.node_query_obj_dict = {} # {'blueberry': (node_obj, node_created)}
 
-    # Bulk containers
-    bulk_edge_create = []
-    bulk_edge_update_weight = []
-    bulk_edge_delete_ids = []
+        # Search history
+        self.search_history = {} # {1: {'query': {'level': 1, 'suggestions': ['a', 'b'], 'weights': [600, 400]}} # sorted by weight
+        self.suggestion_history = {} # {1: ['a'], 2: ['b', 'c']} # sorted by weight
+
+        # Bulk containers
+        self.bulk_edge_create = []
+        self.bulk_edge_update_weight = []
+        self.bulk_edge_delete_ids = []
 
     #################################################
     # Functions
@@ -242,8 +248,6 @@ class Search:
                 i_end += self.n_bulk
         # Debug
         if debug:
-            print("-" * 100)
             print(f"* Nodes - {self.nodes_created} created")
             print(f"* Edges - {len(self.bulk_edge_create)} created, {len(self.bulk_edge_update_weight)} updated, {len(self.bulk_edge_delete_ids)} deleted")
             print(f"* Database -  {len(connection.queries) if connection.queries else 0} queries") 
-            print("-" * 100)
