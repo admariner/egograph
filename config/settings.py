@@ -4,6 +4,7 @@ from celery.schedules import crontab # celery beat
 import django_heroku
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
 
 ################################################################################################
 # DJANGO SETTINGS
@@ -89,7 +90,7 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 # SENTRY
 sentry_sdk.init(
     dsn=os.environ.get('SENTRY_DSN', None), # No logging for local dev
-    integrations=[DjangoIntegration()],
+    integrations=[DjangoIntegration(), RedisIntegration()],
     send_default_pii=True, # add user info to errors
     #debug=True, # logs sentry info to console
 )

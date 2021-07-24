@@ -2,6 +2,9 @@ from config.settings import *
 
 ################################################################################################
 
+# CELERY
+CELERY_BROKER_URL = 'redis://localhost' # Development
+
 # SECURITY
 DEBUG = True # should be True (local only)
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-5rz*dj5yn1)*nux&=_0-)bewcxb2=6v!ipecez^%32#rgv4y5(') # failover for local dev
