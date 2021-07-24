@@ -41,10 +41,13 @@ def result(request, query):
     bulk_edge_update_weight = []
     bulk_edge_delete_ids = []
 
+    # History
+    search_history = {} # {1: {'query': {'level': 1, 'suggestions': ['a', 'b'], 'weights': [600, 400]}} # sorted by weight
+    suggestion_history = {} # {1: ['a'], 2: ['b', 'c']} # sorted by weight
+
     # Data containers
     nodes_created = [0]
     node_query_obj_dict = {} # {'blueberry': (node_obj, node_created)}
-    suggestion_history = {'all': []} # {all: ['a', 'b', 'c'], 1: ['a'], 2: ['b', 'c']} # sorted by weight
     graph_nodes = {clean_query: {'value': 1, 'color': '#fdae6b'}} # {'a': 2} size of node
     graph_edges = [] # [{ 'from': 0, 'to': 1, 'value': 1250 }]
 
@@ -63,8 +66,8 @@ def result(request, query):
                 if not (len(suggestion_word_split) == 1 and len(suggestion_word_split[0]) == 1):
                     return True
 
-    # Clean suggestion phrases to remove query (the query can sometimes change)
-    def clean_suggestions(suggestion_list, weight_list):
+    # Clean google data to remove query (the query can sometimes change)
+    def clean_google_data(suggestion_list, weight_list):
         results = {
             'suggestions': [],
             'weights': [],
@@ -91,8 +94,8 @@ def result(request, query):
         # Return
         return results
 
-    # Return google data
-    def google_search(query):
+    # Get search data
+    def get_search_data(query, level):
         # Rate limit
         sleep(rate_limit)
         # Clean - lowercase and no whitespace
@@ -100,7 +103,7 @@ def result(request, query):
         # Clean - remove the operator if it's already there
         query = query if query[-len(operator):] != operator else query[:len(query) - len(operator)].strip()
         # Add operator back
-        query_operator = f"{query} {operator}"
+        query_and_operator = f"{query} {operator}"
         # Node object - if already stored, get
         if query in node_query_obj_dict:
             node_obj, node_created = node_query_obj_dict[query]
@@ -125,27 +128,52 @@ def result(request, query):
         # Else, no obj / recent obj
         else:
             # Google search
-            url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query_operator)}'
+            url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query_and_operator)}'
             response_json = requests.request("GET", url).json()
             # Clean suggestions
             raw_suggestion_list = response_json[1]
             raw_weight_list = response_json[4]['google:suggestrelevance'] if 'google:suggestrelevance' in response_json[4] else []
-            cleaned_suggestions = clean_suggestions(raw_suggestion_list, raw_weight_list)
+            google_data = clean_google_data(raw_suggestion_list, raw_weight_list)
             # Form lists
-            suggestion_list = cleaned_suggestions['suggestions']
-            weight_list = cleaned_suggestions['weights']
-        # Return data
+            suggestion_list = google_data['suggestions']
+            weight_list = google_data['weights']
+        # Create data to return
         data = {
             # Model info
             'node_obj': node_obj,
             'node_created': node_created,
             # Query info
             'query': query,
-            'query_operator': query_operator,
+            'query_and_operator': query_and_operator,
             # Search results
             'suggestions': list(suggestion_list),
             'weights': list(weight_list),
         }
+        # History - searches (sorted by weight)
+        '''
+        search_history[query] = {
+            'level': level,
+            'suggestions': data['suggestions'],
+            'weights': data['weights'],
+        }
+
+        print()
+        print(f"{level} - {query}")
+        for key, v in search_history.items():
+            print(f"{key} - {len(v['suggestions'])}")
+
+        if 'burgundy' in search_history:
+            #print(search_history['burgundy'])
+            #print()
+            pass
+
+        '''
+        # History - suggestions history (sorted by weight)
+        if level in suggestion_history and isinstance(suggestion_history[level], list): 
+            suggestion_history[level].extend(data['suggestions'])
+        else:
+            suggestion_history[level] = data['suggestions']
+        # Return
         return data
 
     # Make database updates
@@ -240,38 +268,22 @@ def result(request, query):
                 'value': weight,
             })
 
-    # Add suggestions to history (already sorted by weight)
-    def update_suggestion_history(search_results, level):
-        # Add specific level
-        if level in suggestion_history and isinstance(suggestion_history[level], list): 
-            suggestion_history[level].extend(search_results['suggestions'])
-        else:
-            suggestion_history[level] = search_results['suggestions']
-        # Add to all
-        suggestion_history['all'].extend(search_results['suggestions'])
-
     #################################################
     # Google search, update database, update graph data
 
     # 1st level search
-    search1 = google_search(query)
+    search1 = get_search_data(clean_query, 1)
     database_update(search1)
     update_graph(search1, '#f3e24d')
-
-    # Add to suggestion history
-    update_suggestion_history(search1, 1)
 
     # For each child of 1st level (if it exists)
     if 1 in suggestion_history:
         for child1_query in suggestion_history[1]:
 
             # 2nd level search
-            search2 = google_search(child1_query)
+            search2 = get_search_data(child1_query, 2)
             database_update(search2)
             update_graph(search2, '#36c576') 
-
-            # Add to suggestion history
-            update_suggestion_history(search2, 2)
 
     # If there's not enough nodes
     if len(graph_nodes) <= 15:
@@ -281,24 +293,9 @@ def result(request, query):
             for child2_query in suggestion_history[2]:
 
                 # 3rd level search
-                search3 = google_search(child2_query)
+                search3 = get_search_data(child2_query, 3)
                 database_update(search3)
                 update_graph(search3, '#2acdc0')
-
-                # Add to suggestion history
-                update_suggestion_history(search3, 3)
-
-    # COLORS
-    #c5493c
-    #fdae6b
-    #f3e24d
-    #36c576
-    #2acdc0
-    #99c6c8
-    #
-    #6baed6
-    #87d0af
-    #0ca798
 
     #################################################
     # Edge - bulk actions
@@ -322,15 +319,61 @@ def result(request, query):
             i_end += n_bulk
 
     ########################################################
-    # Form graph data
+    # Create graph data
 
-    # Placeholder
+    #print(search_history['burgundy'])
+
+    graph_colors = [
+        '#fdae6b',
+        '#f3e24d',
+        '#36c576',
+        '#2acdc0'
+    ]
+
+    #c5493c
+    #6baed6
+    #87d0af
+    #0ca798
+
+    graph_nodes2 = {clean_query: {'value': 1, 'color': graph_colors[0]}}
+    graph_edges2 = []
+
+    '''
+    # For each query 
+    for search_query, search_results in search_history.items():
+        # For each suggestion
+        for i, suggestion in enumerate(search_results['suggestions']):
+            # If already added, update
+            if suggestion in graph_nodes2:
+                graph_nodes2[suggestion]['value'] += 1
+            # Else, add
+            else:
+                graph_nodes2[suggestion] = {
+                    'value': 1,
+                    'color': graph_colors[search_results['level']],
+                }
+            # Add edge
+            print(f"{search_query} - {suggestion} - {i}")
+            graph_edges2.append({
+                'from': search_query,
+                'to': suggestion,
+                'value': search_results['weights'][i],
+            })
+    '''
+
+    print(len(graph_nodes))
+    print(len(graph_nodes2))
+    #print(graph_edges == graph_edges2)
+
+
+    #print(graph_nodes) # {'malbec': {'value': 9, 'color': '#fdae6b'}
+    #print(graph_edges) # [{'from': 'malbec', 'to': 'merlot', 'value': 1251}
+
+    # Placeholders
     graph_data = {
         'nodes': [],
         'edges': [],
     }
-
-    # Edge combos
     edge_combos = {}
 
     # Add nodes
@@ -406,11 +449,23 @@ def result(request, query):
     centrality_degree.reverse()
 
     ########################################################
-    # Misc
+    # Rank google suggestions
 
+    # Create list of all suggestions
+    all_suggestions = []
+
+    # Get a sorted list of the search history keys
+    suggestion_history_keys = list(suggestion_history.keys())
+    suggestion_history_keys.sort()
+
+    # For each search level, add to the list
+    for level in suggestion_history_keys:
+        for s in suggestion_history[level]:
+            all_suggestions.append(s)
+ 
     # Create ranked list of google suggestions
-    google_suggestions_ranked = []
-    [google_suggestions_ranked.append(x) for x in suggestion_history['all'] if x not in google_suggestions_ranked and x != clean_query]
+    google_suggestions_ranked = [] 
+    [google_suggestions_ranked.append(s) for s in all_suggestions if s not in google_suggestions_ranked and s != clean_query]
 
     ########################################################
     # Debug
@@ -418,10 +473,9 @@ def result(request, query):
     if settings.DEBUG:
         # Suggestion history
         print("-" * 100)
-        print(f"* {len(suggestion_history) - 1} levels of search")
+        print(f"* {len(suggestion_history)} levels of search")
         for level, suggestions in suggestion_history.items():
-            if level != 'all':
-                print(f"> {level} - {suggestions}")
+            print(f"> {level} - {suggestions}")
         # Database
         print("-" * 100)
         print(f"* Nodes - {nodes_created[0]} created")
