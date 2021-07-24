@@ -30,7 +30,14 @@ def edgelist(request):
         # Make in-memory csv
         mem_csv = StringIO()
         writer = csv.writer(mem_csv, delimiter=' ')
-        writer.writerows(edgelist)
+
+        # Clean text function. Turns "e k" into "e_k"
+        def clean_name(name):
+            temp = name.split()
+            return "_".join(temp)
+
+        for parent, child, value in edgelist:
+            writer.writerow([clean_name(parent), clean_name(child), value])
 
         # Add to zip file
         zf.writestr(f"{date_today} {filename}.txt", mem_csv.getvalue())

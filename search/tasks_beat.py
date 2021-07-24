@@ -16,7 +16,7 @@ def pull_children_for_nodes_without_them():
     if node_obj:
 
         # Debug
-        print(f"Celery beat - {node_obj.name} children pulled.")
+        print(f'Celery beat - "{node_obj.name}" searched')
 
         # Make search object
         search = Search()
