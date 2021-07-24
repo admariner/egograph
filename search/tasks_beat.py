@@ -3,8 +3,6 @@ from celery import shared_task
 from .models import Node
 from .classes.search import Search
 
-from datetime import datetime, timezone, timedelta # for datetimes
-
 #####################################################################################
 # Pull children for nodes that haven't done so yet
 
@@ -20,30 +18,14 @@ def pull_children_for_nodes_without_them():
         # Debug
         print(f"Celery beat - {node_obj.name} children pulled.")
 
+        # Make search object
+        search = Search()
 
-    '''
-    # Get google search data
-    search_results = google_search(node_obj.name)
+        # Perform search
+        search.google_and_prep_database(node_obj.name, 1)
 
-    # Update database
-    # Calc 48 hour ago datetime
-    two_days_ago_datetime = datetime.now(timezone.utc) - timedelta(days=2)
-
-    # Get all files created more than 2 days ago
-    expired_files = FileExport.objects.filter(date_created__lte=two_days_ago_datetime).exclude(file_export="")
-
-    # If any exist
-    if expired_files.exists():
-
-        # Debug
-        print(f"Celery beat - {expired_files.count()} expired files deleted.")
-
-        # Delete file only, keep record
-        # Use delete() to sync to S3
-        for f in expired_files:
-            f.file_export.delete()
-
-    '''
+        # Perform db bulk create, update, delete
+        search.database_bulk_actions(debug=True)
 
     # Return
     return
