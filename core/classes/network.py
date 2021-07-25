@@ -66,23 +66,26 @@ class Network:
         for parent, child, value in self.output_edgelist():
             writer.writerow([clean_name(parent), clean_name(child), value])
 
-    # Prints network stats
-    def print_stats(self, n_rankings=10):
+    # Prints network stats and debug
+    def print_debug(self, n_rankings=10):
         # Make graphs
         G = nx.MultiDiGraph(self.output_edgelist())
         G2 = nx.Graph(G)
         # Centrality - degree
-        centrality_degree = [(n, v) for n,v in nx.degree_centrality(self.G).items()]
+        centrality_degree = [(n, v) for n,v in nx.degree_centrality(G).items()]
         centrality_degree.sort(key=lambda x:x[1])
         centrality_degree.reverse()
-        # Print
-        n_ljust = 20
+        # PRINT
+        # Meta
+        print("-" * 100)
+        print(nx.info(G))
+        print("-" * 100)
+        # Rankings
+        n_ljust = 25
+        print("RANKINGS")
         print(f"* {'Deg. centrality'.ljust(n_ljust)} - {[x[0] for x in centrality_degree][:n_rankings]}")
-        print(f"* {'Voterank (undir)'.ljust(n_ljust)} - {[x for x in nx.voterank(self.G2)][:n_rankings]}")
-
-
-
-
+        print(f"* {'Voterank (undir)'.ljust(n_ljust)} - {[x for x in nx.voterank(G2)][:n_rankings]}")
+        print("-" * 100)
 
 
 

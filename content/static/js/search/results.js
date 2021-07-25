@@ -1,6 +1,5 @@
 // Get data
 const graph_data = JSON.parse(JSON.parse(document.getElementById('graph_data').textContent));
-console.log(graph_data)
 
 // Draw function
 var network = null;
