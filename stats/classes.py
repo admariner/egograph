@@ -1,4 +1,4 @@
-from ..models import Edge
+from search.models import Edge
 
 import networkx as nx # network analysis
 import csv # for saving csv

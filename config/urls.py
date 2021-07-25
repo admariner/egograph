@@ -8,7 +8,9 @@ import debug_toolbar
 
 urlpatterns = [
     # Apps
-    path('', include('search.urls')),
+    path('', include('core.urls')),
+    path('search/', include('search.urls')),
+    path('stats/', include('stats.urls')),
     path('export/', include('export.urls')),
     # Admin
     path('admin/', admin.site.urls),

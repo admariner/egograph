@@ -28,7 +28,9 @@ INSTALLED_APPS = [
         # sites
         # sitemaps
     # Custom apps
+    'core',
     'search',
+    'stats',
     'export',
 ]
 

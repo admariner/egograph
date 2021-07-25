@@ -1,7 +1,7 @@
 from celery import shared_task
 
-from .models import Node
-from .classes.search import Search
+from search.models import Node
+from search.classes import Search
 
 #####################################################################################
 # Pull children for nodes that haven't done so yet
