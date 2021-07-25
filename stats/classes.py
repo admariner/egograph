@@ -31,3 +31,13 @@ class Graph:
         n_ljust = 20
         print(f"* {'Deg. centrality'.ljust(n_ljust)} - {[x[0] for x in centrality_degree][:n_rankings]}")
         print(f"* {'Voterank (undir)'.ljust(n_ljust)} - {[x for x in nx.voterank(self.G2)][:n_rankings]}")
+
+
+
+# https://cambridge-intelligence.com/keylines-faqs-social-network-analysis/
+
+# Degree Centrality - won't help much because all nodes have similar amount of children
+# Betweenness centrality
+# Closeness centrality
+# EigenCentrality
+# PageRank

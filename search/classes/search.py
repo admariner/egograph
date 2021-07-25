@@ -1,7 +1,7 @@
 
 from django.conf import settings
 from django.db import connection
-from ..models import Node, Edge
+from search.models import Node, Edge
 
 import requests # for getting URL
 import urllib # parsing url
@@ -34,6 +34,7 @@ class Search:
         self.node_query_obj_dict = {} # {'blueberry': (node_obj, node_created)}
 
         # Search history
+        self.initial_query = None
         self.search_history = {} # {1: {'query': {'level': 1, 'suggestions': ['a', 'b'], 'weights': [600, 400]}} # sorted by weight
         self.suggestion_history = {} # {1: ['a'], 2: ['b', 'c']} # sorted by weight
 
@@ -43,7 +44,7 @@ class Search:
         self.bulk_edge_delete_ids = []
 
     #################################################
-    # Functions
+    # Internal functions
 
     # Check words to see if they're allowed
     def not_excluded(self, suggestion_word_split):
@@ -85,80 +86,8 @@ class Search:
         # Return
         return results
 
-    # Get search data
-    def google_and_prep_database(self, query, level):
-        # Clean - lowercase and no whitespace
-        query = query.lower().strip()
-        # Clean - remove the operator if it's already there
-        query = query if query[-len(self.operator):] != self.operator else query[:len(query) - len(self.operator)].strip()
-        # Add operator back
-        query_and_operator = f"{query} {self.operator}"
-        # Node object - if already stored, get
-        if query in self.node_query_obj_dict:
-            node_obj, node_created = self.node_query_obj_dict[query]
-        # Node object - else, hasn't been stored
-        else:
-            # Get/create
-            node_obj, node_created = Node.objects.get_or_create(name=query)
-            self.nodes_created += 1 if node_created else 0
-            # Store data
-            self.node_query_obj_dict[query] = (node_obj, node_created)
-        # Check if this query has recently been pulled in the database
-        node_recently_pulled = False
-        if node_obj.date_children_last_pulled and self.dt_30_days_ago:
-            node_recently_pulled = node_obj.date_children_last_pulled >= self.dt_30_days_ago
-        # If node recently pulled
-        if node_recently_pulled:
-            # Get children
-            node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
-            # Get lists, ordered by weight, highest to lowest
-            suggestion_list = node_child_edge_qs.values_list('child__name', flat=True)
-            weight_list = node_child_edge_qs.values_list('weight', flat=True)
-        # Else, no obj / recent obj
-        else:
-            # Rate limit
-            sleep(self.rate_limit)
-            # Google search
-            url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query_and_operator)}'
-            response_json = requests.request("GET", url).json()
-            # Clean suggestions
-            raw_suggestion_list = response_json[1]
-            raw_weight_list = response_json[4]['google:suggestrelevance'] if 'google:suggestrelevance' in response_json[4] else []
-            google_data = self.clean_google_data(raw_suggestion_list, raw_weight_list)
-            # Form lists
-            suggestion_list = google_data['suggestions']
-            weight_list = google_data['weights']
-        # Create data to return
-        data = {
-            # Model info
-            'node_obj': node_obj,
-            'node_created': node_created,
-            # Query info
-            'query': query,
-            'query_and_operator': query_and_operator,
-            # Search results
-            'suggestions': list(suggestion_list),
-            'weights': list(weight_list),
-        }
-        # History - search data (sorted by weight). Only add if unique. Use copy to avoid bugs.
-        if query not in self.search_history:
-            self.search_history[query] = {
-                'level': level,
-                'suggestions': data['suggestions'].copy(),
-                'weights': data['weights'].copy(),
-            }
-        # History - suggestions history (sorted by weight)
-        if level in self.suggestion_history and isinstance(self.suggestion_history[level], list): 
-            self.suggestion_history[level].extend(data['suggestions'])
-        else:
-            self.suggestion_history[level] = data['suggestions']
-        # Make database updates
-        self.database_update(data)
-        # Return
-        return data
-
-    # Make database updates
-    def database_update(self, search_results):
+    # Make initial database updates
+    def initial_database_updates(self, search_results):
         # Parent info
         parent_obj = search_results['node_obj']
         parent_created = search_results['node_created']
@@ -229,7 +158,85 @@ class Search:
                             weight=weight,
                         ))
 
-    # Perform bulk database actions
+    #################################################
+    # External functions (user may need to use these)
+
+    # Get search data and take initial database actions
+    def google_and_prep_database(self, query, level):
+        # Clean - lowercase and no whitespace
+        query = query.lower().strip()
+        # Clean - remove the operator if it's already there
+        query = query if query[-len(self.operator):] != self.operator else query[:len(query) - len(self.operator)].strip()
+        # Add operator back
+        query_and_operator = f"{query} {self.operator}"
+        # Node object - if already stored, get
+        if query in self.node_query_obj_dict:
+            node_obj, node_created = self.node_query_obj_dict[query]
+        # Node object - else, hasn't been stored
+        else:
+            # Get/create
+            node_obj, node_created = Node.objects.get_or_create(name=query)
+            self.nodes_created += 1 if node_created else 0
+            # Store data
+            self.node_query_obj_dict[query] = (node_obj, node_created)
+        # Check if this query has recently been pulled in the database
+        node_recently_pulled = False
+        if node_obj.date_children_last_pulled and self.dt_30_days_ago:
+            node_recently_pulled = node_obj.date_children_last_pulled >= self.dt_30_days_ago
+        # If node recently pulled
+        if node_recently_pulled:
+            # Get children
+            node_child_edge_qs = node_obj.edges_as_parent.select_related('child').all().order_by('-weight')
+            # Get lists, ordered by weight, highest to lowest
+            suggestion_list = node_child_edge_qs.values_list('child__name', flat=True)
+            weight_list = node_child_edge_qs.values_list('weight', flat=True)
+        # Else, no obj / recent obj
+        else:
+            # Rate limit
+            sleep(self.rate_limit)
+            # Google search
+            url = f'http://suggestqueries.google.com/complete/search?&output=chrome&gl=us&hl=en&q={urllib.parse.quote(query_and_operator)}'
+            response_json = requests.request("GET", url).json()
+            # Clean suggestions
+            raw_suggestion_list = response_json[1]
+            raw_weight_list = response_json[4]['google:suggestrelevance'] if 'google:suggestrelevance' in response_json[4] else []
+            google_data = self.clean_google_data(raw_suggestion_list, raw_weight_list)
+            # Form lists
+            suggestion_list = google_data['suggestions']
+            weight_list = google_data['weights']
+        # Create data to return
+        data = {
+            # Model info
+            'node_obj': node_obj,
+            'node_created': node_created,
+            # Query info
+            'query': query,
+            'query_and_operator': query_and_operator,
+            # Search results
+            'suggestions': list(suggestion_list),
+            'weights': list(weight_list),
+        }
+        # History - update initial query if needed
+        if not self.initial_query:
+            self.initial_query = query
+        # History - search data (sorted by weight). Only add if unique. Use copy to avoid bugs.
+        if query not in self.search_history:
+            self.search_history[query] = {
+                'level': level,
+                'suggestions': data['suggestions'].copy(),
+                'weights': data['weights'].copy(),
+            }
+        # History - suggestions history (sorted by weight)
+        if level in self.suggestion_history and isinstance(self.suggestion_history[level], list): 
+            self.suggestion_history[level].extend(data['suggestions'])
+        else:
+            self.suggestion_history[level] = data['suggestions']
+        # Make database updates
+        self.initial_database_updates(data)
+        # Return
+        return data
+
+    # Perform final bulk database actions
     def database_bulk_actions(self, debug=settings.DEBUG):
         # Bulk create
         if self.bulk_edge_create:
@@ -247,7 +254,51 @@ class Search:
                 i_start = i_end
                 i_end += self.n_bulk
         # Debug
-        if debug:
+        if debug: 
             print(f"* Nodes - {self.nodes_created} created")
             print(f"* Edges - {len(self.bulk_edge_create)} created, {len(self.bulk_edge_update_weight)} updated, {len(self.bulk_edge_delete_ids)} deleted")
             print(f"* Database -  {len(connection.queries) if connection.queries else 0} queries") 
+
+    # Output edgelist from search data [(from, to, value)]
+    def output_edgelist(self):
+        # Data placeholder
+        data = []
+        # For each search results
+        for from_node, to_results in self.search_history.items():
+            # For each suggestion
+            for i, to_node in enumerate(to_results['suggestions']):
+                # Add to edgelist
+                value = to_results['weights'][i]
+                data.append((from_node, to_node, value))
+        # Return
+        return data
+
+    # Output ranked list of google suggestions (excluding initial query) ['blueberry', 'huckleberry']
+    def output_google_rankings(self, exclude_initial=True):
+        # Placeholder
+        data = [] 
+        # Get a sorted list of the search history keys [1,2,3]
+        suggestion_history_keys = list(self.suggestion_history.keys())
+        suggestion_history_keys.sort()
+        # For each search level, add to the list
+        for level in suggestion_history_keys:
+            for suggestion in self.suggestion_history[level]:
+                # If not already in list
+                if suggestion not in data:
+                    # If excluding initial, check
+                    if exclude_initial:
+                        if suggestion != self.initial_query:
+                            data.append(suggestion)
+                    # Else, append
+                    else:
+                        data.append(suggestion)
+        # Return
+        return data
+
+    # Output debug data
+    def output_debug(self):
+        # Suggestion history
+        print(f"* {len(self.suggestion_history)} levels of search")
+        print(f"> 0 - {[self.initial_query]}")
+        for level, suggestions in self.suggestion_history.items():
+            print(f"> {level} - {suggestions}")
