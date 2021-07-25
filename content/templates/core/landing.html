@@ -6,7 +6,7 @@
     {# About #}
 	<div class="mb-4">
 		<div class="h4 mb-3">About</div>
-		<p>Have you ever noticed that when you start typing something into Google it will attempt to autocomplete your query? This project uses those autocomplete suggestions to create a multi-level network graph from each query. For example, try the word <a href="{% url 'search:result' 'blueberry' %}">blueberry</a>.</p>
+		<p>Have you ever noticed that when you start typing something into Google it will attempt to autocomplete your query? This project uses those autocomplete suggestions to create a multi-level network graph from each query. For example, try the word <a href="{% url 'search:results' 'blueberry' %}">blueberry</a>.</p>
 	</div>
 
     {# Stats #}
@@ -36,16 +36,19 @@
     {# Export #}
 	<div class="mb-4">
 		<div class="h4 mb-3">Export</div>
-			<ul>
-				<li>
-					<a href="{% url 'export:edgelist' %}">Edgelist</a>
-				</li>
-			</ul>
-		{% comment %}
-        <ul>
-            <li><a href="">Pajek format</a> - Can be imported into a variety of network analysis tools, such as Gephi, NetworkX, NodeXL, Pajek, NetMiner, and Social Network Visualizer.</li>
-        </ul>
-		{% endcomment %}
+		<p>Edgelist format can be imported into a variety of network analysis tools. Documentation is below.</p>
+		<a href="{% url 'export:edgelist' %}" class="btn btn-outline-primary" role="button">Download Edge List</a>
+		<ul class="mt-3">
+			<li>
+				Gephi
+			</li>
+			<li>NetworkX</li>
+			<li>NodeXL</li>
+			<li>Pajek</li>
+			<li>NetMiner</li>
+			<li>Social Network Visualizer</li>
+		</ul>
+
     </div>
 
 {% endblock %}

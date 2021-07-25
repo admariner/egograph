@@ -31,6 +31,9 @@ def edgelist(request):
         mem_csv = StringIO()
         writer = csv.writer(mem_csv, delimiter=' ')
 
+        # Write headers
+        writer.writerow(["Source", "Target", "Weight"])
+
         # Clean text function. Turns "e k" into "e_k"
         def clean_name(name):
             temp = name.split()

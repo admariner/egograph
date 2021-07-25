@@ -10,7 +10,7 @@ import networkx as nx # network analysis
 #####################################################################################
 # Page - Search Results
 
-def result(request, query):
+def results(request, query):
 
     # Clean query
     clean_query = query.lower().strip()
@@ -126,7 +126,7 @@ def result(request, query):
     n_rankings = 10
 
     # Render
-    return render(request, 'search/result.html', context = {
+    return render(request, 'search/results.html', context = {
         'input_value': clean_query,
         'graph_data': json.dumps(visjs.output_graph_data()),
         'suggestions': {
