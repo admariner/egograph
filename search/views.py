@@ -50,7 +50,6 @@ def result(request, query):
     # Perform db bulk actions
     settings.DEBUG and print("-" * 100)
     search.database_bulk_actions()
-    settings.DEBUG and print("-" * 100)
 
     # Calculate google suggestions
     google_suggestions_ranked = search.output_google_rankings()
@@ -92,6 +91,7 @@ def result(request, query):
     # Output
     if settings.DEBUG:
         # Output search debug
+        print("-" * 100)
         search.output_debug()
         print("-" * 100)
         # Networkx

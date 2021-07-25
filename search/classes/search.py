@@ -159,7 +159,7 @@ class Search:
                         ))
 
     #################################################
-    # External functions (user may need to use these)
+    # External functions
 
     # Get search data and take initial database actions
     def google_and_prep_database(self, query, level):

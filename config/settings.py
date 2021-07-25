@@ -102,10 +102,15 @@ sentry_sdk.init(
 # https://docs.celeryproject.org/en/stable/userguide/periodic-tasks.html
 
 CELERY_BEAT_SCHEDULE = {
+    # Core - delete nodes without edges
+    'delete_nodes_without_edges': { 
+        'task': 'core.tasks_beat.delete_nodes_without_edges', 
+        'schedule': crontab(minute=0, hour=0), # Execute daily at midnight
+    },
     # Search - pull children for nodes that haven't done so yet
     'pull_children_for_nodes_without_them': { 
         'task': 'search.tasks_beat.pull_children_for_nodes_without_them', 
-        'schedule': crontab(minute='*/1'), # Every 1 min
+        'schedule': crontab(minute='*/1'), # Execute every minute
     },
 }
 
