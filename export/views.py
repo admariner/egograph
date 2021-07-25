@@ -1,9 +1,8 @@
 from django.http import HttpResponse # http response
 
-from search.models import Edge
+from core.classes.network import Network
 
 from datetime import datetime, timezone # for getting time
-import csv # for making csv files
 import zipfile # for making zip files
 from io import BytesIO, StringIO # store data in memory
 
@@ -18,9 +17,6 @@ def edgelist(request):
     # Get today's date for file names
     date_today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
-    # Create edge list
-    edgelist = list(Edge.objects.values_list('parent__name', 'child__name', 'weight'))
-
     # Make in-memory zip file
     mem_zip = BytesIO()
 
@@ -29,21 +25,13 @@ def edgelist(request):
 
         # Make in-memory csv
         mem_csv = StringIO()
-        writer = csv.writer(mem_csv, delimiter=' ')
 
-        # Write headers
-        writer.writerow(["Source", "Target", "Weight"])
-
-        # Clean text function. Turns "e k" into "e_k"
-        def clean_name(name):
-            temp = name.split()
-            return "_".join(temp)
-
-        for parent, child, value in edgelist:
-            writer.writerow([clean_name(parent), clean_name(child), value])
+        # Write edgelist to file
+        network = Network()
+        network.write_edgelist_to_file(mem_csv)
 
         # Add to zip file
-        zf.writestr(f"{date_today} {filename}.txt", mem_csv.getvalue())
+        zf.writestr(f"{date_today} {filename}.edges", mem_csv.getvalue())
 
     #########################################
     # Return the in-memory zip file as a download

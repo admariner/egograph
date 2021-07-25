@@ -296,7 +296,7 @@ class Search:
         return data
 
     # Output debug data
-    def output_debug(self):
+    def print_debug(self):
         # Suggestion history
         print(f"* {len(self.suggestion_history)} levels of search")
         print(f"> 0 - {[self.initial_query]}")

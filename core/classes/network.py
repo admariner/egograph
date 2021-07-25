@@ -1,5 +1,8 @@
 from search.models import Node, Edge
 
+import networkx as nx
+import csv
+
 #####################################################################################
 # Network class
 
@@ -19,6 +22,7 @@ class Network:
     #################################################
     # External functions 
 
+    # Output and optionally delete nodes without edges
     def nodes_without_edges(self, delete=False):
         'Counts nodes that no longer have any edges and can delete them.'
 
@@ -44,4 +48,51 @@ class Network:
         # Return
         return len(nodes_without_edges)
 
+    # Output edgelist
+    def output_edgelist(self):
+        return list(Edge.objects.values_list('parent__name', 'child__name', 'weight'))
 
+    # Write edgelist to file
+    def write_edgelist_to_file(self, file_obj, delimiter=" "):
+        # Make writer
+        writer = csv.writer(file_obj, delimiter=delimiter)
+        # Write headers
+        writer.writerow(["Source", "Target", "Weight"])
+        # Clean text function. Turns "e k" into "e_k"
+        def clean_name(name):
+            temp = name.split()
+            return "_".join(temp)
+        # Write rows
+        for parent, child, value in self.output_edgelist():
+            writer.writerow([clean_name(parent), clean_name(child), value])
+
+    # Prints network stats
+    def print_stats(self, n_rankings=10):
+        # Make graphs
+        G = nx.MultiDiGraph(self.output_edgelist())
+        G2 = nx.Graph(G)
+        # Centrality - degree
+        centrality_degree = [(n, v) for n,v in nx.degree_centrality(self.G).items()]
+        centrality_degree.sort(key=lambda x:x[1])
+        centrality_degree.reverse()
+        # Print
+        n_ljust = 20
+        print(f"* {'Deg. centrality'.ljust(n_ljust)} - {[x[0] for x in centrality_degree][:n_rankings]}")
+        print(f"* {'Voterank (undir)'.ljust(n_ljust)} - {[x for x in nx.voterank(self.G2)][:n_rankings]}")
+
+
+
+
+
+
+
+
+
+
+# https://cambridge-intelligence.com/keylines-faqs-social-network-analysis/
+
+# Degree Centrality - won't help much because all nodes have similar amount of children
+# Betweenness centrality
+# Closeness centrality
+# EigenCentrality
+# PageRank

@@ -92,7 +92,7 @@ def results(request, query):
     if settings.DEBUG:
         # Output search debug
         print("-" * 100)
-        search.output_debug()
+        search.print_debug()
         print("-" * 100)
         # Networkx
         print(nx.info(G))
