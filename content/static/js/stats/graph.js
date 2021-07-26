@@ -44,14 +44,11 @@ function draw() {
 			},
 		},
 		physics: {
-			solver: 'barnesHut',// 'barnesHut' or 'repulsion'
+			solver: 'barnesHut',
 			barnesHut: {
-				theta: 2, // default 0.5. Higher values are faster but generate a more simplistic graph
+				theta: 5, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
-			repulsion: {
-				nodeDistance: 500, // default 100. This is the range of influence for the repulsion.
-			},
-			minVelocity: 10, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
+			minVelocity: 50, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
 				iterations: 1000, // max iterations, but will stop sooner if minvelocity is hit
 				updateInterval: 10 // interval to send progress event
