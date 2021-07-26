@@ -59,7 +59,7 @@ with open('edgelist.edges', encoding='utf-8') as f:
 	reader = csv.reader(f, delimiter=' ')
 	next(reader) # Skip header
 	for row in reader:
-		edgelist.append(tuple(row))
+		edgelist.append((row[0], row[1], {'weight': row[2]}))
 # Make graph
 G = nx.MultiDiGraph(edgelist)
 </code></pre>	

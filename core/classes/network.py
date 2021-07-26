@@ -51,9 +51,17 @@ class Network:
         # Return
         return len(nodes_without_edges)
 
-    # Output edgelist
+    # Output edgelist [(from, to, weight)]
     def output_edgelist(self):
         return list(Edge.objects.values_list('parent__name', 'child__name', 'weight'))
+
+    # Output edgelist in networkx format [(from, to, {'weight': 500})]
+    def output_edgelist_networkx(self):
+        edgelist = []
+        data = list(Edge.objects.values_list('parent__name', 'child__name', 'weight'))
+        for from_node, to_node, weight in data:
+            edgelist.append((from_node, to_node, {'weight': weight}))
+        return edgelist
 
     # Write edgelist to file
     def write_edgelist_to_file(self, file_obj, delimiter=" "):
@@ -125,7 +133,7 @@ class Network:
     # Prints network stats and debug
     def print_debug(self, n_rankings=10):
         # Make graphs
-        G = nx.MultiDiGraph(self.output_edgelist())
+        G = nx.MultiDiGraph(self.output_edgelist_networkx())
         G2 = nx.Graph(G)
         # Centrality - degree
         centrality_degree = [(n, v) for n,v in nx.degree_centrality(G).items()]

@@ -49,9 +49,9 @@ function draw() {
 				theta: 2, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
 			repulsion: {
-				nodeDistance: 500, // This is the range of influence for the repulsion.
+				nodeDistance: 500, // default 100. This is the range of influence for the repulsion.
 			},
-			minVelocity: 70, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
+			minVelocity: 10, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
 				iterations: 1000, // max iterations, but will stop sooner if minvelocity is hit
 				updateInterval: 10 // interval to send progress event
@@ -77,7 +77,6 @@ function draw() {
 	network.on("stabilizationProgress", function (params) {
 		// Calculate progress and update element
 		let progress = Math.round((params.iterations / params.total) * 100) + "%";
-		console.log(progress)
 		progress_el.html(progress).css('width', progress);
 		progress_el;
 	});
@@ -96,7 +95,7 @@ function draw() {
 			network.stabilize(0);
 			// Stop all simulation
 			network.stopSimulation();
-		}, 1000);
+		}, 800);
 	});
 }
 

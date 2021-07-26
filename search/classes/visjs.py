@@ -75,6 +75,9 @@ class Visjs():
                     working_nodes_next_level = set()
                     working_level += 1
 
+    #################################################
+    # External functions
+
     # Calculate graph data
     def calculate_graph_data(self):
 
@@ -210,30 +213,27 @@ class Visjs():
                             'value': sum(values) / len(values),
                         })
 
-    #################################################
-    # External functions
-
     # Output edgelist from graph data. [(from, to, value)]
-    # May differ from initial if parallel edges aren't kept.
     def output_edgelist(self):
-        # Calculate graph data if needed
-        self.calculate_graph_data()
-        # Return
         return [(self.graph_node_list[e['from']], self.graph_node_list[e['to']], e['value']) for e in self.graph_data['edges']]
+
+    # Output edgelist in networkx format [(from, to, {'weight': 500})]
+    def output_edgelist_networkx(self):
+        return [(self.graph_node_list[e['from']], self.graph_node_list[e['to']], {'weight': e['value']}) for e in self.graph_data['edges']]
 
     # Output graph data
     def output_graph_data(self):
-        # Calculate graph data if needed
-        self.calculate_graph_data()
-        # Return
         return self.graph_data
 
     # Output network stats dict {'Nodes': 123}
     def output_network_stats(self):
         # Make networkx object
-        G = nx.MultiDiGraph(self.output_edgelist())
+        G = nx.MultiDiGraph(self.output_edgelist_networkx())
         # Return
         return {
             'Nodes': G.number_of_nodes(),
             'Edges': G.number_of_edges(),
         }
+
+
+

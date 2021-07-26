@@ -61,7 +61,7 @@ function draw() {
 			network.stabilize(0);
 			// Stop all simulation
 			network.stopSimulation();
-		}, 1000);
+		}, 800);
 	});
 }
 

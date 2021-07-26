@@ -59,9 +59,10 @@ def results(request, query):
 
     # Make visjs graph object from search data
     visjs = Visjs(search.output_edgelist(), clean_query)
+    visjs.calculate_graph_data()
 
     # Make nx object from graph data
-    G = nx.MultiDiGraph(visjs.output_edgelist())
+    G = nx.MultiDiGraph(visjs.output_edgelist_networkx())
     G2 = nx.Graph(G)
 
     # Communicability exp
