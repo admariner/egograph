@@ -23,6 +23,8 @@ function draw() {
 			font: {
 				size: 12,
 				face: "Tahoma",
+				strokeColor: '#ffffff',
+				strokeWidth: 4, // px
 			},
 			scaling: {
 				min: 1,
@@ -43,7 +45,7 @@ function draw() {
 		},
 		physics: {
 			barnesHut: {
-				//theta: 1, // default 0.5. Higher values are faster but generate a more simplistic graph
+				theta: 1, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
 			minVelocity: 50, // Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
@@ -51,13 +53,13 @@ function draw() {
 				updateInterval: 10 // interval to send progress event
 			} 
 		},
-		// Turn off all interaction except zoom
 		interaction: {
-			dragNodes: false,
-			dragView: false,
-			selectable: false,
-			selectConnectedEdges: false,
-			hoverConnectedEdges: false,
+			//dragNodes: false,
+			//dragView: false,
+			//zoomView: false,
+			//selectable: false,
+			//selectConnectedEdges: false,
+			//hoverConnectedEdges: false,
 		},
 	};
 
