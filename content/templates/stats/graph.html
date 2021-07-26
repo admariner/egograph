@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+
+{% block page_title %}Network Graph - EgoGraph{% endblock %}
+
+
+{% block content %}
+
+	{# Graph #}
+	<div class="mb-4">
+		<div class="h4 mb-3">Network Graph</div>
+        {# Progress bar #}
+        <div class="progress">
+            <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%;">0%</div>
+        </div>
+        {# Graph #}
+		<div id="graph" class="w-100 border mb-3 rounded" style="display: none;"></div>
+	</div>
+
+	{# Stats #}
+	<div class="mb-5">
+		<div class="h4 mb-3">Network Stats</div>
+		{##}
+		<div class="row row-cols-2 gx-3 gx-md-4">
+			{% for stat_name, stat_value in stats.items %}
+				<div class="col">
+					<ul class="list-group">
+						<li class="list-group-item d-flex justify-content-between align-items-center">
+							{{stat_name}} <span>{{stat_value|intcomma}}</span>
+						</li>
+					</ul>
+				</div>
+			{% endfor%}
+		</div>
+	</div>
+
+{% endblock %}
+
+
+{% block js %}
+
+	{# Pass context data to javascript #}
+	{{ graph_data|json_script:"graph_data" }}
+
+	{# Chart data #}
+	<script src="{% static 'js/stats/graph.js' %}"></script>
+
+{% endblock %}
