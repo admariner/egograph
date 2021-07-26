@@ -24,6 +24,10 @@ function draw() {
 				size: 12,
 				face: "Tahoma",
 			},
+			scaling: {
+				min: 1,
+				max: 50,
+			},
 		},
 		edges: {
 			color: { 
@@ -32,12 +36,16 @@ function draw() {
 			smooth: {
 				enabled: false // straight edges, should help performance
 			},
+			scaling: {
+				min: 1,
+				max: 10,
+			},
 		},
 		physics: {
 			barnesHut: {
 				//theta: 1, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
-			//minVelocity: 10, // Lowest movements speeds allowable. lower value leads to quicker stablization
+			minVelocity: 50, // Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
 				iterations: 1000, // max iterations, but will stop sooner if minvelocity is hit
 				updateInterval: 10 // interval to send progress event
@@ -50,7 +58,6 @@ function draw() {
 			selectable: false,
 			selectConnectedEdges: false,
 			hoverConnectedEdges: false,
-			tooltipDelay: 200,
 		},
 	};
 
@@ -72,14 +79,17 @@ function draw() {
 	network.once("stabilizationIterationsDone", function () {
 		// Show 100%
 		progress_el.html("100%").css('width', '100%');
-		// Remove progress bar
-		$('.progress').remove();
-		// Show graph
-		$('#graph').show();
-		// Stablize again (just to fit to the window)
-		network.stabilize(0);
-		// Stop all simulation
-		network.stopSimulation();
+		// Pause (for effect)
+		setTimeout(function () {
+			// Remove progress bar
+			$('.progress').remove();
+			// Show graph
+			$('#graph').show();
+			// Stablize again (just to fit to the window)
+			network.stabilize(0);
+			// Stop all simulation
+			network.stopSimulation();
+		}, 1000);
 	});
 }
 
