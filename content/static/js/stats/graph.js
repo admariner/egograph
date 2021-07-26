@@ -44,10 +44,14 @@ function draw() {
 			},
 		},
 		physics: {
+			solver: 'repulsion',// 'barnesHut' or 'repulsion'
 			barnesHut: {
-				theta: 1, // default 0.5. Higher values are faster but generate a more simplistic graph
+				theta: 2, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
-			minVelocity: 50, // Lowest movements speeds allowable, leads to quicker stablization
+			repulsion: {
+				nodeDistance: 500, // This is the range of influence for the repulsion.
+			},
+			minVelocity: 70, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
 				iterations: 1000, // max iterations, but will stop sooner if minvelocity is hit
 				updateInterval: 10 // interval to send progress event
@@ -73,6 +77,7 @@ function draw() {
 	network.on("stabilizationProgress", function (params) {
 		// Calculate progress and update element
 		let progress = Math.round((params.iterations / params.total) * 100) + "%";
+		console.log(progress)
 		progress_el.html(progress).css('width', progress);
 		progress_el;
 	});

@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% load humanize %}
 
+{% block head %}
+
+	{# Highlight.js #}
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/styles/googlecode.min.css" integrity="sha512-wwN23oB7wt1IF6MM6k9I5DSoLfNj9/o52G9hfJcOxoB7mrmVFl0yBMAeQ1mnpyk9Nyu1xUC2iMs5jyhF3fOo4w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+{% endblock %}
+
 
 {% block content %}
 
@@ -37,11 +44,26 @@
 			<li>
 				Gephi - Select File/Import Spreadsheet, then import the table as "Edges Table". <a href="https://github.com/gephi/gephi/issues/796" target="_blank" rel="noopener">Instructions</a>
 			</li>
-			<li>NetworkX</li>
+
 			<li>NodeXL</li>
 			<li>Pajek</li>
 			<li>NetMiner</li>
 			<li>Social Network Visualizer - Open the file and when asked the type select "Edge List (weighted)".</li>
+			<li>
+				NetworkX
+<pre><code class="language-python"># Import NetworkX
+import networkx as nx
+# Read edgelist
+edgelist = []
+with open('edgelist.edges', encoding='utf-8') as f:
+	reader = csv.reader(f, delimiter=' ')
+	next(reader) # Skip header
+	for row in reader:
+		edgelist.append(tuple(row))
+# Make graph
+G = nx.MultiDiGraph(edgelist)
+</code></pre>	
+			</li>
 		</ul>
 
     </div>
@@ -50,12 +72,21 @@
 
 
 {% block js %}
+
+	{# Add hightlight.js for code formatting #}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/highlight.min.js" integrity="sha512-z+/WWfyD5tccCukM4VvONpEtLmbAm5LDu7eKiyMQJ9m7OfPEDL7gENyDRL3Yfe8XAuGsS2fS4xSMnl6d30kqGQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+	{# Page-specific JS #}
     <script>
+
+		// Highlight code
+		hljs.highlightAll();
 
         // Show alert
         {% if alert %}
         alert.show('{{alert}}');
         {% endif %}
-        
+
     </script>
+
 {% endblock %}
