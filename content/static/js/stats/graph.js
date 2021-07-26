@@ -44,7 +44,7 @@ function draw() {
 			},
 		},
 		physics: {
-			solver: 'repulsion',// 'barnesHut' or 'repulsion'
+			solver: 'barnesHut',// 'barnesHut' or 'repulsion'
 			barnesHut: {
 				theta: 2, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
