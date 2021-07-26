@@ -8,7 +8,7 @@ from search.models import Node, Edge
 def landing(request):
     return render(request, 'core/landing.html', context = {
         'stats': {
-            'nodes': Node.objects.count(),
-            'edges': Edge.objects.count(),
+            'Nodes': Node.objects.count(),
+            'Edges': Edge.objects.count(),
         }
     })

@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-        # humanize
+    'django.contrib.humanize',
     'django.contrib.staticfiles',
         # sites
         # sitemaps

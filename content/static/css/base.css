@@ -6,4 +6,32 @@
 }
 
 /*----------------------------------------------------------*/
-/* x */
+/* Graph */
+
+#graph {
+	height: 780px;
+}
+
+@media (max-width: 780px) {
+	#graph {
+		height: 750px;
+	}
+}
+
+@media (max-width: 420px) {
+	#graph {
+		height: 560px;
+	}
+}
+
+@media (max-width: 380px) {
+	#graph {
+		height: 490px;
+	}
+}
+
+@media (max-width: 330px) {
+	#graph {
+		height: 410px;
+	}
+}

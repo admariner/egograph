@@ -1,5 +1,4 @@
 import networkx as nx
-import random
 
 #####################################################################################
 # Creates vis.js graph data from an edgelist
@@ -87,8 +86,13 @@ class Visjs():
 
             # Start node - Calculate start node if needed
             if not self.start_node:
-                # Pick a random node
-                self.start_node = random.choice(self.edgelist)[0]
+                # Pick a node based on degree centrality
+                G = nx.MultiDiGraph(self.edgelist)
+                degree_centrality_list = [(n, v) for n,v in nx.degree_centrality(G).items()]
+                degree_centrality_list.sort(key=lambda x:x[1])
+                degree_centrality_list.reverse()
+                # Set start node
+                self.start_node = degree_centrality_list[0][0]
 
             # Edgelist - Transform into parent/child dict
             for from_node, to_node, value in self.edgelist:

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 
 
 {% block page_title %}{{input_value}} - EgoGraph{% endblock %}
@@ -100,7 +101,7 @@
 				<div class="col">
 					<ul class="list-group">
 						<li class="list-group-item d-flex justify-content-between align-items-center">
-							{{stat_name}} <span>{{stat_value}}</span>
+							{{stat_name}} <span>{{stat_value|intcomma}}</span>
 						</li>
 					</ul>
 				</div>
@@ -115,9 +116,6 @@
 
 	{# Pass context data to javascript #}
 	{{ graph_data|json_script:"graph_data" }}
-
-	{# Vis.js #}
-	<script src="https://visjs.github.io/vis-network/standalone/umd/vis-network.min.js"></script>
 
 	{# Chart data #}
 	<script src="{% static 'js/search/results.js' %}"></script>
