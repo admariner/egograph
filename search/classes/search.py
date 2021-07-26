@@ -21,7 +21,7 @@ class Search:
     def __init__(self):
         
         # Settings
-        self.operator = 'vs' # adds this to each search query if it's not already there
+        self.operator = 'vs' # DON'T INCLUDE WHITESPACE. Operator is added to query if it's not already there.
         self.rate_limit = .05 # time between each query (seconds)
         self.n_bulk = 100 # bulk update size (100 max)
 
@@ -76,7 +76,7 @@ class Search:
             # Remove each word until you get to operator
             for word in phrase.split():
                 word_split.remove(word)
-                if word == self.operator.strip():
+                if word == self.operator:
                     break
             # If the word isn't excluded
             if self.not_excluded(word_split):

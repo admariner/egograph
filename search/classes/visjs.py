@@ -43,6 +43,10 @@ class Visjs():
     #################################################
     # Internal functions
 
+    # Calculate a node's color. Use modulo to always pick a color.
+    def node_color(self, level):
+        return self.graph_colors[level % len(self.graph_colors)]
+
     # Recursively calc levels of starting node's descendants
     def calculate_descendant_levels(self, starting_node):
         # Variables
@@ -109,48 +113,53 @@ class Visjs():
             self.calculate_descendant_levels(self.start_node) 
 
             # Graph nodes - Create node dict
-            for from_node, to_nodes in self.edgelist_dict.items():
-                # Make sure levels of parent and all children are calculated
-                self.calculate_descendant_levels(from_node)
-                # Get node color. Use modulo to always pick a color
-                node_color = self.graph_colors[self.graph_node_dict[from_node]['level'] % len(self.graph_colors)]
-                # Parent - If node already added
-                if from_node in self.graph_node_dict:
-                    if 'value' not in self.graph_node_dict[from_node]:
-                        self.graph_node_dict[from_node]['value'] = 1
-                    if 'color' not in self.graph_node_dict[from_node]:
-                        self.graph_node_dict[from_node]['color'] = node_color
-                # Parent - If node hasn't been added
-                else:
-                    self.graph_node_dict[from_node] = {
-                        'value': 1,
-                        'color': node_color,
-                    }
-                # Children
-                for i, to_node in enumerate(to_nodes):
-                    # Get node color. Use modulo to always pick a color
-                    node_color = self.graph_colors[self.graph_node_dict[to_node]['level'] % len(self.graph_colors)]
-                    # Child - If node already added
-                    if to_node in self.graph_node_dict:
-                        # Value - update or add
-                        if 'value' in self.graph_node_dict[to_node]:
-                            self.graph_node_dict[to_node]['value'] += 1 # Size is based on how mny edges go TO that node
-                        else:
-                            self.graph_node_dict[to_node]['value'] = 1
-                        # Color - add
-                        if 'color' not in self.graph_node_dict[to_node]:
-                            self.graph_node_dict[to_node]['color'] = node_color
-                    # Child - If node hasn't been added
+            # If edgelist dict, iterate through all items
+            if self.edgelist_dict:
+                for from_node, to_nodes in self.edgelist_dict.items():
+                    # Make sure levels of parent and all children are calculated
+                    self.calculate_descendant_levels(from_node)
+                    # Parent - If node already added
+                    if from_node in self.graph_node_dict:
+                        if 'value' not in self.graph_node_dict[from_node]:
+                            self.graph_node_dict[from_node]['value'] = 1
+                        if 'color' not in self.graph_node_dict[from_node]:
+                            self.graph_node_dict[from_node]['color'] = self.node_color(self.graph_node_dict[from_node]['level'])
+                    # Parent - If node hasn't been added
                     else:
-                        self.graph_node_dict[to_node] = {
+                        self.graph_node_dict[from_node] = {
                             'value': 1,
-                            'color': node_color,
+                            'color': self.node_color(self.graph_node_dict[from_node]['level']),
                         }
+                    # Children
+                    for i, to_node in enumerate(to_nodes):
+                        # Child - If node already added
+                        if to_node in self.graph_node_dict:
+                            # Value - update or add
+                            if 'value' in self.graph_node_dict[to_node]:
+                                self.graph_node_dict[to_node]['value'] += 1 # Size is based on how mny edges go TO that node
+                            else:
+                                self.graph_node_dict[to_node]['value'] = 1
+                            # Color - add
+                            if 'color' not in self.graph_node_dict[to_node]:
+                                self.graph_node_dict[to_node]['color'] = self.node_color(self.graph_node_dict[to_node]['level'])
+                        # Child - If node hasn't been added
+                        else:
+                            self.graph_node_dict[to_node] = {
+                                'value': 1,
+                                'color': self.node_color(self.graph_node_dict[to_node]['level']),
+                            }
+            # Else, always make sure the initial node has value/color data
+            else:    
+                # Start node should always be in this dict because levels have been calc'd
+                if 'value' not in self.graph_node_dict[self.start_node]:
+                    self.graph_node_dict[self.start_node]['value'] = 1
+                if 'color' not in self.graph_node_dict[self.start_node]:
+                    self.graph_node_dict[self.start_node]['color'] = self.node_color(self.graph_node_dict[self.start_node]['level'])
 
             # Graph nodes - Make node list from node dict.
             self.graph_node_list = list(self.graph_node_dict.keys())
 
-            # Graph nodes - Convert node dict to list
+            # Graph nodes - Add nodes to graph data
             for i, node in enumerate(self.graph_node_list):
                 self.graph_data['nodes'].append({
                     'id': i,
