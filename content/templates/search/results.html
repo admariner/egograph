@@ -19,71 +19,76 @@
 	{# Suggestions #}
 	<div class="mb-4">
 		<div class="h4 mb-0">Top Suggestions</div>
-		{##}
-		<div class="row gx-3 gx-md-4">
-			{# Google #}
-			<div class="col">
-				<div class="my-3">Google autocomplete</div>
-				<div class="row g-1 g-sm-2 g-lg-3 suggest-list">
-					<div class="col-12 col-lg-6">
-						{% for suggestion in suggestions.google|slice:":5" %}
-							<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
-								<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
-									<span class="suggest-number">{{forloop.counter}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
-								</a>
-								<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
-									<i class="fe fe-external-link"></i>
-								</a>
-							</div>
-						{% endfor%}
+		{% if suggestions.google and suggestions.communicability %}
+			{# Suggestion Tables #}
+			<div class="row gx-3 gx-md-4">
+				{# Google #}
+				<div class="col">
+					<div class="my-3">Google autocomplete</div>
+					<div class="row g-1 g-sm-2 g-lg-3 suggest-list">
+						<div class="col-12 col-lg-6">
+							{% for suggestion in suggestions.google|slice:":5" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
+						<div class="col-12 col-lg-6">
+							{% for suggestion in suggestions.google|slice:"5:" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter|add:"5"}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
 					</div>
-					<div class="col-12 col-lg-6">
-						{% for suggestion in suggestions.google|slice:"5:" %}
-							<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
-								<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
-									<span class="suggest-number">{{forloop.counter|add:"5"}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
-								</a>
-								<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
-									<i class="fe fe-external-link"></i>
-								</a>
-							</div>
-						{% endfor%}
+				</div>
+				{# Communicability #}
+				<div class="col">
+					<div class="my-3">
+						Communicability <i class="fe fe-info text-muted ml-1" data-bs-toggle="tooltip" title="Ranked by the fraction of nodes they're connected to"></i>
+					</div>
+					<div class="row g-1 g-sm-2 g-lg-3 suggest-list">
+						<div class="col-12 col-lg-6">
+							{% for suggestion in suggestions.communicability|slice:":5" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
+						<div class="col-12 col-lg-6">
+							{% for suggestion in suggestions.communicability|slice:"5:" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter|add:"5"}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
 					</div>
 				</div>
 			</div>
-			{# Communicability #}
-			<div class="col">
-				<div class="my-3">
-					Communicability <i class="fe fe-info text-muted ml-1" data-bs-toggle="tooltip" title="Ranked by the fraction of nodes they're connected to"></i>
-				</div>
-				<div class="row g-1 g-sm-2 g-lg-3 suggest-list">
-					<div class="col-12 col-lg-6">
-						{% for suggestion in suggestions.communicability|slice:":5" %}
-							<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
-								<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
-									<span class="suggest-number">{{forloop.counter}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
-								</a>
-								<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
-									<i class="fe fe-external-link"></i>
-								</a>
-							</div>
-						{% endfor%}
-					</div>
-					<div class="col-12 col-lg-6">
-						{% for suggestion in suggestions.communicability|slice:"5:" %}
-							<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
-								<a href="{% url 'search:results' suggestion %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
-									<span class="suggest-number">{{forloop.counter|add:"5"}}.</span>&nbsp; <span class="text-truncate">{{suggestion}}</span>
-								</a>
-								<a class="suggest-ext-link" href="https://www.google.com/search?q={{suggestion}}" target="_blank" rel="noopener">
-									<i class="fe fe-external-link"></i>
-								</a>
-							</div>
-						{% endfor%}
-					</div>
-				</div>
-			</div>
-		</div>
+		{% else %}
+			{# No data #}
+			<div class="my-3">No suggestions were found for this search query.</div>
+		{% endif %}
 	</div>
 
 	{# Graph #}
