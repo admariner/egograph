@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.db import connection
+
 from search.models import Node, Edge
 
 import networkx as nx
@@ -66,6 +69,59 @@ class Network:
         for parent, child, value in self.output_edgelist():
             writer.writerow([clean_name(parent), clean_name(child), value])
 
+    # Import edgelist to database from file
+    def import_edgelist_from_file(self, file_path, delimiter=" ", debug=settings.DEBUG):
+
+        # Data containers
+        bulk_edge_create = []
+        node_obj_dict = []
+
+        # Open file
+        edgelist = []
+        with open(file_path, encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter=delimiter)
+            next(reader) # Skip header
+            for row in reader:
+                edgelist.append(tuple(row))
+
+        # Debug
+        debug and print(f"{len(edgelist)} edges to import.")
+
+        # Nodes - get objects
+        for row in edgelist:
+            # Get info
+            from_name = row[0].replace('_', ' ')
+            to_name = row[1].replace('_', ' ')
+            weight = row[2]
+            # Get objects - From
+            if from_name in node_obj_dict:
+                from_obj = node_obj_dict[from_name]
+            else:
+                from_obj, from_created = Node.objects.get_or_create(name=from_name)
+                node_obj_dict[from_name] = from_obj
+            # Get objects - To
+            if to_name in node_obj_dict:
+                to_obj = node_obj_dict[to_name]
+            else:
+                to_obj, from_created = Node.objects.get_or_create(name=to_name)
+                node_obj_dict[to_name] = to_obj
+            # Add edge to bulk
+            bulk_edge_create.append(Edge(
+                parent=from_obj,
+                child=to_obj,
+                weight=weight,
+            ))
+
+        # Edges - bulk create
+        if bulk_edge_create:
+            n_bulk = 100
+            Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
+
+        # Debug
+        if debug: 
+            print(f"* Edges - {len(bulk_edge_create)} created")
+            print(f"* Database -  {len(connection.queries) if connection.queries else 0} queries") 
+
     # Prints network stats and debug
     def print_debug(self, n_rankings=10):
         # Make graphs
@@ -86,6 +142,7 @@ class Network:
         print(f"* {'Deg. centrality'.ljust(n_ljust)} - {[x[0] for x in centrality_degree][:n_rankings]}")
         print(f"* {'Voterank (undir)'.ljust(n_ljust)} - {[x for x in nx.voterank(G2)][:n_rankings]}")
         print("-" * 100)
+
 
 
 
