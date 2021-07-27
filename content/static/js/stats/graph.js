@@ -46,9 +46,9 @@ function draw() {
 		physics: {
 			solver: 'barnesHut',
 			barnesHut: {
-				theta: 5, // default 0.5. Higher values are faster but generate a more simplistic graph
+				theta: 3, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
-			minVelocity: 50, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
+			minVelocity: 30, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
 				iterations: 1000, // max iterations, but will stop sooner if minvelocity is hit
 				updateInterval: 10 // interval to send progress event

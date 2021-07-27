@@ -45,6 +45,19 @@ def graph(request):
     visjs = Visjs(edgelist)
     visjs.calculate_graph_data()
 
+
+    '''
+    {
+        id: 1,
+        label: "Abdelmoumene Djabou",
+        title: "Country: " + "Algeria" + "<br>" + "Team: " + "Club Africain",
+        value: 22,
+        group: 24,
+        x: -1392.5499,
+        y: 1124.1614,
+    }
+    '''
+
     # Debug
     if settings.DEBUG:
         print("-" * 100)

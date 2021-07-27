@@ -1,10 +1,14 @@
 {% extends "base.html" %}
+{% load static %}
 {% load humanize %}
 
 {% block head %}
 
 	{# Highlight.js #}
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/styles/atom-one-light.min.css" integrity="sha512-o5v54Kh5PH0dgnf9ei0L+vMRsbm5fvIvnR/XkrZZjN4mqdaeH7PW66tumBoQVIaKNVrLCZiBEfHzRY4JJSMK/Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+	{# Page CSS #}
+	<link rel="stylesheet" href="{% static 'css/core/landing.css' %}">
 	
 {% endblock %}
 
@@ -14,7 +18,13 @@
     {# About #}
 	<div class="mb-4">
 		<div class="h4 mb-3">About</div>
-		<p>Have you ever noticed that when you start typing something into Google it will attempt to autocomplete your query? This project uses those autocomplete suggestions to create a multi-level network graph from each query. For example, try the word <a href="{% url 'search:results' 'blueberry' %}">blueberry</a>.</p>
+		<p>When you start typing something into Google have you noticed it will try to autocomplete your query? This project uses those suggestions to create a network graph from each search query. For example, try the word <a href="{% url 'search:results' 'blueberry' %}">blueberry</a>.</p>
+		Thoughts behind this project:
+		<ol>
+			<li>Everything that humans think about they eventually type into Google.</li>
+			<li>Google stores this data and (I assume) uses it to make better suggestions.</li>
+			<li>Therefore, a network graph of these suggestions is a map of the human psyche.</li>
+		</ol>
 	</div>
 
 	{# Stats #}
@@ -42,15 +52,23 @@
 		</div>
 		<ul class="mt-3">
 			<li>
-				Gephi - Select File/Import Spreadsheet, then import the table as "Edges Table". <a href="https://github.com/gephi/gephi/issues/796" target="_blank" rel="noopener">Instructions</a>
+				<span class="export-tool">Gephi</span> - Select File/Import Spreadsheet, then import the table as "Edges Table" (<a href="https://github.com/gephi/gephi/issues/796" target="_blank" rel="noopener">Instructions</a>).
 			</li>
 
-			<li>NodeXL</li>
-			<li>Pajek</li>
-			<li>NetMiner</li>
-			<li>Social Network Visualizer - Open the file and when asked the type select "Edge List (weighted)".</li>
 			<li>
-				NetworkX
+				<span class="export-tool">NodeXL</span>
+			</li>
+			<li>
+				<span class="export-tool">Pajek</span>
+			</li>
+			<li>
+				<span class="export-tool">NetMiner</span>
+			</li>
+			<li>
+				<span class="export-tool">Social Network Visualizer</span> - Open the file and when asked the type select "Edge List (weighted)".
+			</li>
+			<li>
+				<span class="export-tool">NetworkX</span> - See example code below:
 <pre><code class="language-python" style="margin-right:14px;"># Import NetworkX
 import networkx as nx
 # Read edgelist
