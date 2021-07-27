@@ -27,10 +27,53 @@
 		</ol>
 	</div>
 
-	{# Stats #}
+	{# Statistics #}
+	<hr>
 	<div class="mb-4">
+		{##}
 		<div class="h4 mb-3">Statistics</div>
 		{##}
+		<div class="row row-cols-1 gy-1">
+			{##}
+			<div class="col">
+				<div class="card border-0">
+					<div class="card-body pb-0">
+						<div class="h6">Network Size</div>
+						<div class="small"></div>
+					</div>
+					<div class="chart-container">
+						<canvas id="chart1"></canvas>
+					</div>
+				</div>
+			</div>
+			{##}
+			<div class="col">
+				<div class="card border-0">
+					<div class="card-body pb-0">
+						<div class="h6">Edge Completion</div>
+						<div class="small"></div>
+					</div>
+					<div class="chart-container">
+						<canvas id="chart2"></canvas>
+					</div>
+				</div>
+			</div>
+			{##}
+			<div class="col">
+				<div class="card border-0">
+					<div class="card-body pb-0">
+						<div class="h6">Edge Recency</div>
+						<div class="small"></div>
+					</div>
+					<div class="chart-container">
+						<canvas id="chart3"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{% comment %}
 		<div class="row row-cols-2 gx-3 gx-md-4">
 			{% for stat_name, stat_value in stats.items %}
 				<div class="col">
@@ -42,10 +85,11 @@
 				</div>
 			{% endfor%}
 		</div>
-	</div>
+	{% endcomment %}
 
-    {# Export #}
-	<div class="mb-4">
+    {# Data Access #}
+	<hr>
+	<div class="mb-5">
 		<div class="d-flex justify-content-between mb-3">
 			<div class="h4 mb-0">Data Access</div>
 			<a href="{% url 'export:edgelist' %}" class="btn btn-outline-primary btn-sm" role="button">Download Edge List</a>
@@ -54,16 +98,17 @@
 			<li>
 				<span class="export-tool">Gephi</span> - Select File/Import Spreadsheet, then import the table as "Edges Table" (<a href="https://github.com/gephi/gephi/issues/796" target="_blank" rel="noopener">Instructions</a>).
 			</li>
-
 			<li>
-				<span class="export-tool">NodeXL</span>
+				<span class="export-tool">Cytoscape</span> - Select File/Import/Network From File, then click "Advanced Options" and change the delimiter to space.
 			</li>
+			{% comment %}
 			<li>
 				<span class="export-tool">Pajek</span>
 			</li>
 			<li>
 				<span class="export-tool">NetMiner</span>
 			</li>
+			{% endcomment %}
 			<li>
 				<span class="export-tool">Social Network Visualizer</span> - Open the file and when asked the type select "Edge List (weighted)".
 			</li>
@@ -91,8 +136,22 @@ G = nx.MultiDiGraph(edgelist)
 
 {% block js %}
 
+	{# Set debug flags #}
+	{% if debug %}<script>const debug_mode = true;</script>{% else %}<script>const debug_mode = false;</script>{% endif %}
+
+	{# Pass context data to javascript #}
+	{{ chart_data|json_script:"chart_data" }}
+
+    {# Moment and Chartjs #}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js" integrity="sha256-4iQZ6BVL4qNKlQ27TExEhBN1HFPvAvAMbFavKKosSWQ=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" integrity="sha256-R4pqcOYV8lt7snxMQO/HSbVCFRPMdrhAFMH+vr9giYI=" crossorigin="anonymous"></script>
+
 	{# Add hightlight.js for code formatting #}
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/highlight.min.js" integrity="sha512-z+/WWfyD5tccCukM4VvONpEtLmbAm5LDu7eKiyMQJ9m7OfPEDL7gENyDRL3Yfe8XAuGsS2fS4xSMnl6d30kqGQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+	{# Page-specific chart JS #}
+	<script src="{% static 'js/core/chart_global_options.js' %}"></script>
+	<script src="{% static 'js/core/landing.js' %}"></script>
 
 	{# Page-specific JS #}
     <script>
