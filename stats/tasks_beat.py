@@ -55,7 +55,7 @@ def calc_network_graph_positions(nodes_to_calc=10000):
         # Behavior alternatives
         outboundAttractionDistribution = True, # Dissuade hubs
         linLogMode = True, # Make graph circular
-        adjustSizes = False, # Prevent overlap
+        adjustSizes = True, # Prevent overlap
         edgeWeightInfluence = 1, # How much influence you give to the edges weight. 0 is "no influence" and 1 is "normal"
         # Log
         verbose=True,
