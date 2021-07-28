@@ -107,7 +107,7 @@ class Visjs():
                 degree_centrality_list.sort(key=lambda x:x[1])
                 degree_centrality_list.reverse()
                 # Set start node, fail to random
-                top_node = degree_centrality_list[0][0]
+                top_node = degree_centrality_list[0][0] if degree_centrality_list and degree_centrality_list[0] else None
                 self.start_node = top_node if top_node else random.choice(self.edgelist)[0]
 
             # Edgelist - Transform into parent/child dict
