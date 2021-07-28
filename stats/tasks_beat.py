@@ -2,15 +2,15 @@ from celery import shared_task
 
 from core.classes.network import Network
 from stats.models import Stat
+from stats.forceatlas2 import ForceAtlas2
 
-from .forceatlas2 import ForceAtlas2
 import networkx as nx
 
 #####################################################################################
 # Calculate x/y positions for network graph
 
 @shared_task
-def calc_network_graph_positions(nodes_to_calc=5000):
+def calc_network_graph_positions(nodes_to_calc=10000):
 
     # Make network object
     network = Network()
@@ -49,13 +49,13 @@ def calc_network_graph_positions(nodes_to_calc=5000):
         barnesHutOptimize = True,
         barnesHutTheta = 1.2, # default 1.2. higher is faster but more simplistic
         # Tuning
-        scalingRatio = 2, # default 2. How much repulsion you want. More makes a more sparse graph
+        scalingRatio = 1, # default 2. How much repulsion you want. More makes a more sparse graph
         strongGravityMode = False, # A stronger gravity view
         gravity = 1, # default 1
         # Behavior alternatives
         outboundAttractionDistribution = True, # Dissuade hubs
         linLogMode = True, # Make graph circular
-        adjustSizes = True, # Prevent overlap
+        adjustSizes = False, # Prevent overlap
         edgeWeightInfluence = 1, # How much influence you give to the edges weight. 0 is "no influence" and 1 is "normal"
         # Log
         verbose=True,
@@ -63,7 +63,7 @@ def calc_network_graph_positions(nodes_to_calc=5000):
 
     # Calc positions
     G_new = nx.MultiDiGraph(edgelist_new)
-    positions = forceatlas2.forceatlas2_networkx_layout(G_new, iterations=2000)
+    positions = forceatlas2.forceatlas2_networkx_layout(G_new, iterations=1000)
 
     # Save positions to database
     try:
