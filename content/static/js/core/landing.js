@@ -82,7 +82,9 @@ sorted_days.forEach(function (day, i) {
     const completion = ((day_dict[day]['nodes_completed'] / day_dict[day]['nodes']) * 100).toFixed(1)
     data['node_edge_completion'].push(completion);
     // Add Recency
-    data['node_edge_recency'].push(day_dict[day]['recency'].toFixed(1));
+    if (day_dict[day]['recency']) {
+        data['node_edge_recency'].push(day_dict[day]['recency'].toFixed(1));
+    }
     // If first day
     if (i == 0) {
         data['nodes'].push(day_dict[day]['nodes']);
