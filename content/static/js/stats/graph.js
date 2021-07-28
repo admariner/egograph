@@ -50,7 +50,7 @@ function draw() {
 			},
 			minVelocity: 30, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
-				iterations: 1000, // max iterations, but will stop sooner if minvelocity is hit
+				iterations: 0, // max iterations, but will stop sooner if minvelocity is hit
 				updateInterval: 10 // interval to send progress event
 			} 
 		},
