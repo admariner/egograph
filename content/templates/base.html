@@ -18,6 +18,14 @@
 	<meta name="twitter:description" content="{% if page_desc %}{{page_desc}}{% else %}Network graph of Google search suggestions.{% endif %}">
 	<meta property="og:description" content="{% if page_desc %}{{page_desc}}{% else %}Network graph of Google search suggestions.{% endif %}">
 
+	{# Open Graph / Facebook #}
+	<meta property="og:type" content="website">
+	<meta property="og:image" content="https://egograph.com{% static 'img/favicons/preview.png' %}">
+
+	{# Twitter #}
+	<meta property="twitter:card" content="summary_large_image">
+	<meta property="twitter:image" content="https://egograph.com{% static 'img/favicons/preview.png' %}">
+
 	{# Favicons #}	
 	<link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicons/favicon-32x32.png' %}">
 	<link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicons/favicon-16x16.png' %}">
@@ -64,7 +72,10 @@
 	{# NAV #}
 	<nav class="navbar navbar-expand navbar-dark bg-dark px-0 mb-4">
 		<div class="container-fluid container-body px-3">
-			<a class="navbar-brand" href="{% url 'core:landing' %}">EgoGraph</a>
+			<a class="navbar-brand" href="{% url 'core:landing' %}">
+				<img src="{% static 'favicons/favicon_white.svg' %}" alt="EgoGraph" width="30" height="30" class="d-inline-block align-text-top">
+				EgoGraph
+			</a>
 			<div class="collapse navbar-collapse" id="navbarCollapse">
 				{# Left nav links #}
 				<ul class="navbar-nav me-auto"></ul>
