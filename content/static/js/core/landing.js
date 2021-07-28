@@ -31,36 +31,53 @@ var data = {
 //////////////////////////////////////////////////////////
 // Create day dict {day: {nodes: 1, edges: 2}}
 
+// Placeholders
 let day_dict = {};
+let day_list = []
 
-// Nodes
+// Make list of days
 for (const d of data_json.nodes_data) {
-    // Format day
-    let day = moment(d.day).format('YYYY-MM-DD');
-    // Add day/nodes
-    if (day in day_dict) {
-	    day_dict[day]['nodes'] = d.total;
-        day_dict[day]['nodes_completed'] = d.completed;
-        day_dict[day]['recency'] = d.recency_avg;
-    } else {
-        day_dict[day] = {
-            'nodes': d.total,
-            'nodes_completed': d.completed,
-            'recency': d.recency_avg,
-        }
-    }
+    day_list.push(moment(d.day).format('YYYY-MM-DD'));
+}
+for (const d of data_json.edges_data) {
+    day_list.push(moment(d.day).format('YYYY-MM-DD'));
 }
 
-// Edges
-for (const d of data_json.edges_data) {
-    // Format day
-    let day = moment(d.day).format('YYYY-MM-DD');
-    // Add day/nodes
+// Make node/edge dict
+for (const day of day_list) {
+    // Get node info
+    let nodes = 0;
+    let nodes_completed = 0;
+    let recency = 0;
+    for (const d of data_json.nodes_data) {
+        let day2 = moment(d.day).format('YYYY-MM-DD');
+        if (day == day2) {
+            nodes = d.total ? d.total : 0;
+            nodes_completed = d.completed ? d.completed : 0;
+            recency = d.recency_avg ? d.recency_avg : 0;
+        } 
+    }
+    // Get edge info
+    let edges = 0;
+    for (const d of data_json.edges_data) {
+        let day2 = moment(d.day).format('YYYY-MM-DD');
+        if (day == day2) {
+            edges = d.total ? d.total : 0;
+        } 
+    }
+
+    // Add nodes/edges
     if (day in day_dict) {
-	    day_dict[day]['edges'] = d.total;
+	    day_dict[day]['nodes'] = nodes;
+        day_dict[day]['nodes_completed'] = nodes_completed;
+        day_dict[day]['recency'] = recency;
+        day_dict[day]['edges'] = edges;
     } else {
         day_dict[day] = {
-            'edges': d.total 
+            'nodes': nodes,
+            'nodes_completed': nodes_completed,
+            'recency': recency,
+            'edges': edges 
         }
     }
 }
@@ -79,11 +96,17 @@ sorted_days.forEach(function (day, i) {
     // Add days
     data['days'].push(day);
     // Add completion
-    const completion = ((day_dict[day]['nodes_completed'] / day_dict[day]['nodes']) * 100).toFixed(1)
-    data['node_edge_completion'].push(completion);
+    if (day_dict[day]['nodes_completed'] != 0 && day_dict[day]['nodes'] != 0) {
+        const completion = ((day_dict[day]['nodes_completed'] / day_dict[day]['nodes']) * 100).toFixed(1)
+        data['node_edge_completion'].push(completion);
+    } else {
+        data['node_edge_completion'].push(100);
+    }
     // Add Recency
     if (day_dict[day]['recency']) {
         data['node_edge_recency'].push(day_dict[day]['recency'].toFixed(1));
+    } else {
+        data['node_edge_recency'].push(0);
     }
     // If first day
     if (i == 0) {
