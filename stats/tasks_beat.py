@@ -47,9 +47,9 @@ def calc_network_graph_positions(nodes_to_calc=10000):
         # Performance
         jitterTolerance = 1, # How much swinging you allow. Above 1 discouraged. Lower gives less speed and more precision
         barnesHutOptimize = True,
-        barnesHutTheta = 1.2, # default 1.2. higher is faster but more simplistic
+        barnesHutTheta = 1, # default 1.2. higher is faster but more simplistic
         # Tuning
-        scalingRatio = 1, # default 2. How much repulsion you want. More makes a more sparse graph
+        scalingRatio = 10, # default 2. How much repulsion you want. More makes a more sparse graph
         strongGravityMode = False, # A stronger gravity view
         gravity = 1, # default 1
         # Behavior alternatives
@@ -63,7 +63,7 @@ def calc_network_graph_positions(nodes_to_calc=10000):
 
     # Calc positions
     G_new = nx.MultiDiGraph(edgelist_new)
-    positions = forceatlas2.forceatlas2_networkx_layout(G_new, iterations=1000)
+    positions = forceatlas2.forceatlas2_networkx_layout(G_new, iterations=2000)
 
     # Save positions to database
     try:
