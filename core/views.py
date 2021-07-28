@@ -22,7 +22,8 @@ def landing(request):
 
     # Convert recency to days
     for n in nodes_data:
-        n['recency_avg'] = abs(n['recency_avg'].total_seconds() / 60 / 60 / 24) # seconds to days
+        if n['recency_avg']:
+            n['recency_avg'] = abs(n['recency_avg'].total_seconds() / 60 / 60 / 24) # seconds to days
 
     # Return
     return render(request, 'core/landing.html', context = {
