@@ -1,9 +1,10 @@
-from celery import shared_task
+from django.conf import settings
 
 from core.classes.network import Network
 from stats.models import Stat
 from stats.forceatlas2 import ForceAtlas2
 
+from celery import shared_task
 import networkx as nx
 
 #####################################################################################
@@ -58,7 +59,7 @@ def calc_network_graph_positions(nodes_to_calc=10000):
         adjustSizes = True, # Prevent overlap
         edgeWeightInfluence = 1, # How much influence you give to the edges weight. 0 is "no influence" and 1 is "normal"
         # Log
-        verbose=True,
+        verbose = settings.DEBUG,
     )
 
     # Calc positions

@@ -17,7 +17,7 @@ function draw() {
 	// Set options
 	const options = {
 		autoResize: true, // resize graph when container is resized
-		clickToUse: true, // react to mouse and touch events only when active
+		clickToUse: false, // react to mouse and touch events only when active
 		nodes: {
 			shape: "dot",
 			font: {

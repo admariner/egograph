@@ -1,4 +1,5 @@
 import networkx as nx
+import random
 
 #####################################################################################
 # Creates vis.js graph data from an edgelist
@@ -21,26 +22,19 @@ class Visjs():
         # Flags
         self.data_hasnt_been_calculated = True
 
-        # Colors
+        # Colors - First 4 are shown on the search phrase page
         self.graph_colors = [
             '#fdae6b',
             '#f3e24d',
             '#36c576',
             '#2acdc0',
-            #
-            "#8dd3c7",
-            "#ffffb3",
-            "#bebada",
-            "#fb8072",
-            "#80b1d3",
-            "#fdb462",
-            "#b3de69",
-            "#fccde5",
-            "#d9d9d9",
-            "#bc80bd",
-            "#ccebc5",
-            "#ffed6f"
         ]
+
+        # Colors - Add additional colors for the network graph
+        # Color schemes: https://observablehq.com/@d3/color-schemes
+        more_colors = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#ff7f00","#cab2d6","#6a3d9a","#b15928"]
+        for i in range(4):
+            self.graph_colors.append(random.choice(more_colors))
 
         # Edgelist data containers
         self.edgelist_dict = {} # different way of looking at edgelist {'from_node': ['to_node']}
@@ -112,8 +106,9 @@ class Visjs():
                 degree_centrality_list = [(n, v) for n,v in nx.degree_centrality(G).items()]
                 degree_centrality_list.sort(key=lambda x:x[1])
                 degree_centrality_list.reverse()
-                # Set start node
-                self.start_node = degree_centrality_list[0][0]
+                # Set start node, fail to random
+                top_node = degree_centrality_list[0][0]
+                self.start_node = top_node if top_node else random.choice(self.edgelist)[0]
 
             # Edgelist - Transform into parent/child dict
             for from_node, to_node, value in self.edgelist:
