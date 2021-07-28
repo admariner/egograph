@@ -128,6 +128,9 @@ def results(request, query):
 
     # Render
     return render(request, 'search/results.html', context = {
+        'page_title': f"{clean_query} - EgoGraph",
+        'page_desc': f"Top suggestions for {clean_query}: {', '.join(google_suggestions_ranked[:n_rankings])}.",
+        #
         'input_value': clean_query,
         'graph_data': json.dumps(visjs.output_graph_data()),
         'suggestions': {

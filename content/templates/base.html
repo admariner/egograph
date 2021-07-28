@@ -9,14 +9,14 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
 	{# Titles #}
-	<title>{% block page_title %}EgoGraph - Google Network Graph{% endblock %}</title>
-	<meta name="twitter:title" content="EgoGraph - Google Network Graph">
-	<meta property="og:title" content="EgoGraph - Google Network Graph">
+	<title>{% if page_title %}{{page_title}}{% else %}EgoGraph - Google Network Graph{% endif %}</title>
+	<meta name="twitter:title" content="{% if page_title %}{{page_title}}{% else %}EgoGraph - Google Network Graph{% endif %}">
+	<meta property="og:title" content="{% if page_title %}{{page_title}}{% else %}EgoGraph - Google Network Graph{% endif %}">
 
 	{# Description #}
-	<meta name="description" content="{% block page_desc %}Network graph of Google search suggestions.{% endblock %}">
-	<meta name="twitter:description" content="Network graph of Google search suggestions.">
-	<meta property="og:description" content="Network graph of Google search suggestions.">
+	<meta name="description" content="{% if page_desc %}{{page_desc}}{% else %}Network graph of Google search suggestions.{% endif %}">
+	<meta name="twitter:description" content="{% if page_desc %}{{page_desc}}{% else %}Network graph of Google search suggestions.{% endif %}">
+	<meta property="og:description" content="{% if page_desc %}{{page_desc}}{% else %}Network graph of Google search suggestions.{% endif %}">
 
 	{# Favicons #}	
 	<link rel="icon" href="{% static 'img/favicon.ico' %}">	

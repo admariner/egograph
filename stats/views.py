@@ -50,6 +50,9 @@ def graph(request):
 
     # Render
     return render(request, 'stats/graph.html', context = {
+        'page_title': "Network Graph - EgoGraph",
+        'page_desc': "Visualize the top nodes in the entire network graph.",
+        #
         'graph_data': json.dumps(visjs.output_graph_data()),
         'stats': visjs.output_network_stats(),
     })
