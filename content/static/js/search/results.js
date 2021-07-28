@@ -17,7 +17,7 @@ function draw() {
 	// Set options
 	var options = {
 		autoResize: true, // resize graph when container is resized
-		clickToUse: true, // react to mouse and touch events only when active
+		clickToUse: false, // react to mouse and touch events only when active
 		nodes: {
 			shape: "dot",
 			font: {
@@ -30,6 +30,15 @@ function draw() {
 			color: { 
 				inherit: "from" // where edges inherit their color
 			},
+		},
+		// Disable all interaction
+		interaction: {
+			dragNodes: false,
+			dragView: false,
+			zoomView: false,
+			selectable: false,
+			selectConnectedEdges: false,
+			hoverConnectedEdges: false,
 		},
 	};
 
@@ -44,7 +53,6 @@ function draw() {
 		// Calculate progress and update element
 		let progress = Math.round((params.iterations / params.total) * 100) + "%";
 		progress_el.html(progress).css('width', progress);
-		progress_el;
 	});
 	
 	// Event - stabilization finished

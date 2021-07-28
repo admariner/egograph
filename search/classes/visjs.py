@@ -30,7 +30,7 @@ class Visjs():
             '#2acdc0',
         ]
 
-        # Colors - Add additional colors for the network graph
+        # Colors - Randomly add additional colors for the network graph
         # Color schemes: https://observablehq.com/@d3/color-schemes
         more_colors = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#ff7f00","#cab2d6","#6a3d9a","#b15928"]
         for i in range(4):

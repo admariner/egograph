@@ -44,20 +44,18 @@ function draw() {
 				max: 10,
 			},
 		},
-		physics: false,
-		/*
-		{
+		physics: {
 			solver: 'barnesHut',
 			barnesHut: {
 				theta: 3, // default 0.5. Higher values are faster but generate a more simplistic graph
 			},
 			minVelocity: 30, // default 0.1. Lowest movements speeds allowable, leads to quicker stablization
 			stabilization: {
-				iterations: 1000, // max iterations, but will stop sooner if minvelocity is hit
+				iterations: 0, // max iterations, but will stop sooner if minvelocity is hit
 				updateInterval: 10 // interval to send progress event
 			} 
 		},
-		*/
+		// Disable all interaction
 		interaction: {
 			dragNodes: false,
 			dragView: false,
@@ -71,8 +69,32 @@ function draw() {
 	// Update network
 	network = new vis.Network(container, data, options);
 
-	// Stablize again (just to fit to the window)
-	network.stabilize(0);
+	// Get progress element
+	let progress_el = $('#progress')
+
+	// Event - stabilization progress update
+	network.on("stabilizationProgress", function (params) {
+		// Calculate progress and update element
+		let progress = Math.round((params.iterations / params.total) * 100) + "%";
+		progress_el.html(progress).css('width', progress);
+	});
+	
+	// Event - stabilization finished
+	network.once("stabilizationIterationsDone", function () {
+		// Show 100%
+		progress_el.html("100%").css('width', '100%');
+		// Pause (for effect)
+		setTimeout(function () {
+			// Remove progress bar
+			$('.progress').remove();
+			// Show graph
+			$('#graph').show();
+			// Stablize again (just to fit to the window)
+			network.stabilize(0);
+			// Stop all simulation
+			network.stopSimulation();
+		}, 1200);
+	});
 }
 
 // Draw graph on load event
