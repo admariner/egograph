@@ -20,9 +20,6 @@ class Network:
         pass
 
     #################################################
-    # Internal functions
-
-    #################################################
     # External functions 
 
     # Output and optionally delete nodes without edges

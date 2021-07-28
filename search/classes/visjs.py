@@ -10,10 +10,11 @@ class Visjs():
     # Variables
 
     # Init
-    def __init__(self, edgelist, start_node=None, keep_parallel_edges=True):
+    def __init__(self, edgelist, start_node=None, positions=None, keep_parallel_edges=True):
         
         # Inputs
         self.edgelist = edgelist
+        self.positions = positions
         self.start_node = start_node # node to start graph at
         self.keep_parallel_edges = keep_parallel_edges # keep parallel edges or collapse / average them together?
 
@@ -161,11 +162,20 @@ class Visjs():
 
             # Graph nodes - Add nodes to graph data
             for i, node in enumerate(self.graph_node_list):
+                # Get positions if existing
+                pos = {}
+                if self.positions and node in self.positions:
+                    pos = {
+                        'x': self.positions[node][0],
+                        'y': self.positions[node][1],
+                    } 
+                # Add to data
                 self.graph_data['nodes'].append({
                     'id': i,
                     'label': node,
                     'value': self.graph_node_dict[node]['value'], # size of node on graph
                     'color': self.graph_node_dict[node]['color'], # color of node/edges on graph
+                    **pos,
                 })
 
             # Graph edges - If we're keeping parallel edges, then simply add all

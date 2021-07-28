@@ -58,7 +58,7 @@ def results(request, query):
     # Network_analysis
 
     # Make visjs graph object from search data
-    visjs = Visjs(search.output_edgelist(), clean_query)
+    visjs = Visjs(edgelist=search.output_edgelist(), start_node=clean_query)
     visjs.calculate_graph_data()
 
     # Make nx object from graph data
