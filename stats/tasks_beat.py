@@ -11,7 +11,7 @@ import networkx as nx
 # Calculate x/y positions for network graph
 
 @shared_task
-def calc_network_graph_positions(nodes=5000, iterations=3000):
+def calc_network_graph_positions(nodes=5000, iterations=2000):
 
     # Make network object
     network = Network()
