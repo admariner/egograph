@@ -113,8 +113,8 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute=0, hour=0), # Execute daily at midnight
     },
     # Stats - calculate the network graph positions
-    'calc_network_graph_positions': { 
-        'task': 'stats.tasks_beat.calc_network_graph_positions', 
+    'calc_network_graph_data': { 
+        'task': 'stats.tasks_beat.calc_network_graph_data', 
         'schedule': crontab(minute=0, hour=0), # Execute daily at midnight
     },
 }

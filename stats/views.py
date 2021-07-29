@@ -27,6 +27,18 @@ def graph(request):
     except:
         edgelist_nx = []
 
+    # Get top nodes
+    try:
+        top_nodes = Stat.objects.get(name='top_nodes').data
+    except:
+        top_nodes = []
+
+    # Get statistics
+    try:
+        statistics = Stat.objects.get(name='statistics').data
+    except:
+        statistics = []
+
     # Convert edgelist weights from dict to int
     edgelist_visjs = []
     for e in edgelist_nx:
@@ -51,5 +63,6 @@ def graph(request):
         'page_desc': "Visualize the top nodes in the entire network graph.",
         #
         'graph_data': json.dumps(visjs.output_graph_data()),
-        'stats': visjs.output_network_stats(),
+        'top_nodes': top_nodes,
+        'statistics': statistics,
     })

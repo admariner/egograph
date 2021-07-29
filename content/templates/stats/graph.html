@@ -5,10 +5,79 @@
 
 {% block content %}
 
+	{# Suggestions #}
+	<div class="mb-4">
+		<div class="h4 mb-3">Top Nodes</div>
+		{% if top_nodes %}
+			<p>Top 20 nodes ranked by degree centrality <i class="fe fe-info text-muted ml-1" data-bs-toggle="tooltip" title="The fraction of other nodes they're connected to"></i></p>
+			{# Suggestion Tables #}
+			<div class="row gx-3 gx-md-4">
+				<div class="col">
+					<div class="row g-1 g-sm-2 g-lg-3 suggest-list">
+						<div class="col-12 col-lg-6">
+							{% for node in top_nodes|slice:":5" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' node %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter}}.</span>&nbsp; <span class="text-truncate">{{node}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{node}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
+						<div class="col-12 col-lg-6">
+							{% for node in top_nodes|slice:"5:10" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' node %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter|add:"5"}}.</span>&nbsp; <span class="text-truncate">{{node}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{node}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
+					</div>
+				</div>
+				<div class="col">
+					<div class="row g-1 g-sm-2 g-lg-3 suggest-list">
+						<div class="col-12 col-lg-6">
+							{% for node in top_nodes|slice:"10:15" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' node %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter|add:"10"}}.</span>&nbsp; <span class="text-truncate">{{node}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{node}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
+						<div class="col-12 col-lg-6">
+							{% for node in top_nodes|slice:"-5:" %}
+								<div class="d-flex justify-content-between align-items-center list-group-item p-0 {% if forloop.first %}first{% elif forloop.last %}last{% endif %}">
+									<a href="{% url 'search:results' node %}" class="list-group-item list-group-item-action border-0 text-truncate suggest-int-link">
+										<span class="suggest-number">{{forloop.counter|add:"15"}}.</span>&nbsp; <span class="text-truncate">{{node}}</span>
+									</a>
+									<a class="suggest-ext-link" href="https://www.google.com/search?q={{node}}" target="_blank" rel="noopener">
+										<i class="fe fe-external-link"></i>
+									</a>
+								</div>
+							{% endfor%}
+						</div>
+					</div>
+				</div>
+			</div>
+		{% else %}
+			<div class="my-3">Information is unavailable at this time.</div>
+		{% endif %}
+	</div>
+
 	{# Graph #}
 	<div class="mb-4">
 		<div class="h4 mb-3">Network Graph</div>
-		<p>Showing a selection of the top nodes sorted by degree centrality.</p>
+		<p>A graph of the 5,000 top nodes in the network.</p>
         {# Progress bar #}
         <div class="progress" style="height: 25px;">
             <div id="progress" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
@@ -20,13 +89,15 @@
 	{# Stats #}
 	<div class="mb-5">
 		<div class="h4 mb-3">Network Stats</div>
+		<p>Statistics for the largest connected component.</p>
 		{##}
-		<div class="row row-cols-2 gx-3 gx-md-4">
-			{% for stat_name, stat_value in stats.items %}
+		<div class="row row-cols-1 row-cols-sm-2 gx-3 gx-md-4 gy-1 gy-sm-2">
+			{% for stat_name, stat_value in statistics %}
 				<div class="col">
 					<ul class="list-group">
-						<li class="list-group-item d-flex justify-content-between align-items-center">
-							{{stat_name}} <span>{{stat_value|intcomma}}</span>
+						<li class="list-group-item d-flex justify-content-between align-items-center text-truncate">
+							<span class="text-truncate">{{stat_name}}</span>
+							<span>{{stat_value|intcomma}}</span>
 						</li>
 					</ul>
 				</div>
