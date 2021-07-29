@@ -75,12 +75,11 @@ class Network:
             writer.writerow([clean_name(parent), clean_name(child), value])
 
     # Import edgelist to database from file
+    # This is designed specifically for the site's own edgelist.edges file
     def import_edgelist_from_file(self, file_path, delimiter=" ", debug=settings.DEBUG):
-
         # Data containers
         bulk_edge_create = []
-        node_obj_dict = []
-
+        node_obj_dict = {}
         # Open file
         edgelist = []
         with open(file_path, encoding='utf-8') as f:
@@ -88,10 +87,8 @@ class Network:
             next(reader) # Skip header
             for row in reader:
                 edgelist.append(tuple(row))
-
         # Debug
         debug and print(f"{len(edgelist)} edges to import.")
-
         # Nodes - get objects
         for row in edgelist:
             # Get info
@@ -116,12 +113,10 @@ class Network:
                 child=to_obj,
                 weight=weight,
             ))
-
         # Edges - bulk create
         if bulk_edge_create:
             n_bulk = 100
             Edge.objects.bulk_create(bulk_edge_create, batch_size=n_bulk, ignore_conflicts=True) # ignore errors
-
         # Debug
         if debug: 
             print(f"* Edges - {len(bulk_edge_create)} created")
