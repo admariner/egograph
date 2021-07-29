@@ -35,10 +35,10 @@ def calc_network_graph_positions(nodes=5000, iterations=2000):
     limited_subgraph = G.subgraph(largest_subgraph_nodes_sorted_by_degree[:nodes])
 
     # Make new edgelist
-    edgelist_new = []
+    edgelist_nx = []
     for from_node, to_node in nx.edges(limited_subgraph):
         edge_weight = G[from_node][to_node][0]['weight']
-        edgelist_new.append((from_node, to_node, edge_weight))
+        edgelist_nx.append((from_node, to_node, {'weight': edge_weight}))
 
     ########################################################
     # Calculate positions
@@ -62,16 +62,20 @@ def calc_network_graph_positions(nodes=5000, iterations=2000):
     )
 
     # Calc positions
-    G_new = nx.MultiDiGraph(edgelist_new)
+    G_new = nx.MultiDiGraph(edgelist_nx)
     positions = forceatlas2.forceatlas2_networkx_layout(G_new, iterations=iterations)
 
     # Save positions to database
-    try:
-        stat_obj = Stat.objects.get(name='positions')
-        stat_obj.data = positions
-        stat_obj.save()
-    except:
-        Stat.objects.create(name='positions', data=positions)
+    Stat.objects.update_or_create(
+        name = 'positions',
+        defaults = {'data': positions}
+    )
+
+    # Save edgelist to database
+    Stat.objects.update_or_create(
+        name = 'edgelist',
+        defaults = {'data': edgelist_nx}
+    )
 
     # Return
     return

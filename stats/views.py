@@ -21,35 +21,32 @@ def graph(request):
     except:
         positions = {}
 
-    # Get network obj
-    network = Network()
+    # Get edgelist (networkx format)
+    try:
+        edgelist_nx = Stat.objects.get(name='edgelist').data
+    except:
+        edgelist_nx = []
 
-    # Make subgraph
-    G = nx.MultiDiGraph(network.output_edgelist_networkx())
-    subgraph = G.subgraph(positions.keys())
-
-    # Make new edgelist
-    edgelist_new = []
-    for from_node, to_node in nx.edges(subgraph):
-        edge_weight = G[from_node][to_node][0]['weight']
-        edgelist_new.append((from_node, to_node, edge_weight))
-
-    ########################################################
+    # Convert edgelist weights from dict to int
+    edgelist_visjs = []
+    for e in edgelist_nx:
+        edgelist_visjs.append((e[0], e[1], e[2]['weight']))
 
     # IF NODES DON'T MATCH FINAL OUTPUT IT'S PROBABLY BECAUSE OF ISOLATES
 
     # Make visjs data
-    visjs = Visjs(edgelist=edgelist_new, positions=positions)
+    visjs = Visjs(edgelist=edgelist_visjs, positions=positions)
     visjs.calculate_graph_data()
 
     # Debug
     if settings.DEBUG:
         print("-" * 100)
-        print(nx.info(subgraph))
+        print(nx.info(nx.MultiDiGraph(edgelist_nx)))
         print("-" * 100)
 
     # Render
     return render(request, 'stats/graph.html', context = {
+        #
         'page_title': "Network Graph | EgoGraph",
         'page_desc': "Visualize the top nodes in the entire network graph.",
         #

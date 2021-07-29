@@ -138,7 +138,7 @@ var chart1 = new Chart($("#chart1"), {
         datasets: [{
                 label: "Edges",
                 data: data.edges,
-                steppedLine: true,
+                steppedLine: 'middle',
                 backgroundColor: 'rgba(0, 0, 0, 0)',
                 borderColor: node_color,
                 borderWidth: 1.5,
@@ -152,7 +152,7 @@ var chart1 = new Chart($("#chart1"), {
             {
                 label: "Nodes",
                 data: data.nodes,
-                steppedLine: true,
+                steppedLine: 'middle',
                 backgroundColor: 'rgba(0, 0, 0, 0)',
                 borderColor: edge_color,
                 borderWidth: 1.5,
@@ -211,7 +211,7 @@ var chart1 = new Chart($("#chart2"), {
         datasets: [{
                 label: "Edge Completion",
                 data: data.node_edge_completion,
-                steppedLine: true,
+                steppedLine: 'middle',
                 backgroundColor: edge_completion_color,
                 borderColor: edge_completion_color,
                 borderWidth: 1.5,
@@ -270,7 +270,7 @@ var chart1 = new Chart($("#chart3"), {
         datasets: [{
                 label: "Edge Recency",
                 data: data.node_edge_recency,
-                steppedLine: true,
+                steppedLine: 'middle',
                 backgroundColor: edge_recency_color,
                 borderColor: edge_recency_color,
                 borderWidth: 1.5,
