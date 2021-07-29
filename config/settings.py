@@ -110,12 +110,12 @@ CELERY_BEAT_SCHEDULE = {
     # Core - delete nodes without edges
     'delete_nodes_without_edges': { 
         'task': 'core.tasks_beat.delete_nodes_without_edges', 
-        'schedule': crontab(minute=0, hour=0), # Execute daily at midnight
+        'schedule': crontab(minute=0, hour='*/12'), # Execute every 12 hours
     },
     # Stats - calculate the network graph positions
     'calc_network_graph_data': { 
         'task': 'stats.tasks_beat.calc_network_graph_data', 
-        'schedule': crontab(minute=0, hour=0), # Execute daily at midnight
+        'schedule': crontab(minute=0, hour='*/12'), # Execute every 12 hours
     },
 }
 
