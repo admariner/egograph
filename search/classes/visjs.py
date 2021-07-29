@@ -93,8 +93,8 @@ class Visjs():
     # Calculate graph data
     def calculate_graph_data(self):
 
-        # Calculate graph data only if needed
-        if self.data_hasnt_been_calculated:
+        # Calculate graph data only if needed AND if edgelist isn't blank
+        if self.data_hasnt_been_calculated and self.edgelist:
 
             # Unflag
             self.data_hasnt_been_calculated = False
